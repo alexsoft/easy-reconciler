@@ -7,6 +7,7 @@ import { allocationsRoutes } from "./routes/allocations.js";
 import { proposalsRoutes } from "./routes/proposals.js";
 import { payoutRoutes } from "./routes/payouts.js";
 import { auditRoutes } from "./routes/audit.js";
+import { invoiceRoutes } from "./routes/invoices.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
@@ -16,6 +17,7 @@ await app.register(allocationsRoutes);
 await app.register(proposalsRoutes);
 await app.register(payoutRoutes);
 await app.register(auditRoutes);
+await app.register(invoiceRoutes);
 
 app.get("/api/health", async () => ({ ok: true }));
 
