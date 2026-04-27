@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, eq, ilike, or, sql, desc } from "drizzle-orm";
+import { and, eq, ilike, or, sql, desc, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { transactions, allocations } from "../db/schema.js";
 import { z } from "zod";
@@ -16,7 +16,7 @@ export async function transactionRoutes(app: FastifyInstance) {
       search: z.string().optional(),
     }).parse(req.query);
 
-    const filters = [] as any[];
+    const filters: SQL[] = [];
     if (q.status && q.status !== "all") filters.push(eq(transactions.status, q.status));
     if (q.search) {
       const like = `%${q.search}%`;
