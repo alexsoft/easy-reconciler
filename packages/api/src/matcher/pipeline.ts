@@ -3,6 +3,7 @@ import type { DB } from "../db/client.js";
 import { transactions } from "../db/schema.js";
 import { matcherConfig, type MatcherConfig } from "./config.js";
 import { runR1ExactRef } from "./rules/r1-exact-ref.js";
+import { runR2DescriptionRef } from "./rules/r2-description-ref.js";
 import { recomputeTxStatus } from "./update-tx-status.js";
 
 export interface MatcherReport {
@@ -23,6 +24,7 @@ export async function runMatcher(db: DB): Promise<MatcherReport> {
   const fired = (rule: string) => { report.perRule[rule] = (report.perRule[rule] ?? 0) + 1; };
 
   await runR1ExactRef(db, matcherConfig, fired);
+  await runR2DescriptionRef(db, matcherConfig, fired);
 
   for (const tx of txs) await recomputeTxStatus(db, tx.id);
 
