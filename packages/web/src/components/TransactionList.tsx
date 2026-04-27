@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStats, useTransactions } from "../api/queries.js";
 import { StatusBadge } from "./StatusBadge.js";
 import { Money } from "./Money.js";
@@ -9,8 +9,16 @@ const FILTERS = ["all", "needs_review", "auto_matched", "unmatched", "unrelated"
 export function TransactionList({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string) => void }) {
   const [status, setStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    if (search.length === 1) return;
+    const t = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const stats = useStats();
-  const list = useTransactions({ status: status === "all" ? undefined : status, search: search || undefined });
+  const list = useTransactions({ status: status === "all" ? undefined : status, search: debouncedSearch || undefined });
 
   return (
     <div className="flex flex-col h-full border-r">
