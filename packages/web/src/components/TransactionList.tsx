@@ -13,7 +13,7 @@ export function TransactionList({ selectedId, onSelect }: { selectedId: string |
 
   useEffect(() => {
     if (search.length === 1) return;
-    const t = setTimeout(() => setDebouncedSearch(search), 500);
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);
 
