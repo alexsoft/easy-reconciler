@@ -6,6 +6,7 @@ import { runR1ExactRef } from "./rules/r1-exact-ref.js";
 import { runR2DescriptionRef } from "./rules/r2-description-ref.js";
 import { runR3FuzzyRef } from "./rules/r3-fuzzy-ref.js";
 import { runR4NameAmountDate } from "./rules/r4-name-amount-date.js";
+import { runR5SubsetSum } from "./rules/r5-subset-sum.js";
 import { recomputeTxStatus } from "./update-tx-status.js";
 
 export interface MatcherReport {
@@ -29,6 +30,7 @@ export async function runMatcher(db: DB): Promise<MatcherReport> {
   await runR2DescriptionRef(db, matcherConfig, fired);
   await runR3FuzzyRef(db, matcherConfig, fired);
   await runR4NameAmountDate(db, matcherConfig, fired);
+  await runR5SubsetSum(db, matcherConfig, fired);
 
   for (const tx of txs) await recomputeTxStatus(db, tx.id);
 
