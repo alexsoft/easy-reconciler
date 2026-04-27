@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Run pnpm inside a Node container so the host stays free of pnpm/node.
+# Bind-mounts the workspace; node_modules and pnpm-lock.yaml are written to host.
+#
+# Phase 1 (pre-Task 6): use a one-off node:24-alpine container.
+# Phase 2 (post-Task 6): once docker-compose.yml has an `api` service with deps
+# installed, this wrapper can be replaced by `docker compose run --rm api pnpm "$@"`.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+exec docker run --rm -i \
+  -v "${REPO_ROOT}:/workspace" \
+  -w /workspace \
+  -e CI=1 \
+  node:24-alpine \
+  sh -c "corepack enable >/dev/null 2>&1 && exec pnpm $(printf ' %q' "$@")"

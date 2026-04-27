@@ -18,6 +18,7 @@
 - **Commit message style:** Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`).
 - **Run TDD strictly for the matcher and API.** UI components get a single end-to-end smoke test, not per-component tests.
 - After every commit, mark the step's checkbox done.
+- **Docker-only Node toolchain.** The host has no pnpm/Node install. Anywhere this plan says `pnpm X`, run `./bin/pnpm X` instead — it shells out to a `node:24-alpine` container with the workspace bind-mounted, so `node_modules/` and `pnpm-lock.yaml` land on the host. Once Task 6 lands `docker-compose.yml`, the wrapper can be replaced by `docker compose run --rm api pnpm "$@"` (same interface, reuses the api image). The same applies to anything else that needs `node` — run via Docker.
 
 ---
 
