@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { parse as parseCsv } from "csv-parse/sync";
 import { db, pool } from "./client.js";
+import { runMatcher } from "../matcher/pipeline.js";
 import { invoices, invoice_lines, transactions, payout_batches, payout_items } from "./schema.js";
 import {
   InvoiceSchema,
@@ -143,6 +144,9 @@ async function main() {
   await seedInvoices();
   await seedTransactions();
   await seedPayout();
+  console.log("running matcher...");
+  const report = await runMatcher(db);
+  console.log(`matcher done: ${JSON.stringify(report.totals)}`);
   await pool.end();
 }
 
