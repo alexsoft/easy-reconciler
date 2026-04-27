@@ -1,3 +1,2 @@
-export default function App() {
-  return <div className="p-4">Reconciler — boot ok</div>;
-}
+import { Workspace } from "./pages/Workspace.js";
+export default function App() { return <Workspace />; }
