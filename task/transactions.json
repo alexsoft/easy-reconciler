@@ -1,0 +1,722 @@
+[
+  {
+    "id": "TXN-0001",
+    "date": "2026-02-26",
+    "amount": 1123.2,
+    "currency": "EUR",
+    "counterparty_name": "Acme Sarl",
+    "structured_reference": "INV-2026-0001",
+    "description": "Payment INV-2026-0001"
+  },
+  {
+    "id": "TXN-0002",
+    "date": "2026-02-19",
+    "amount": 122.85,
+    "currency": "EUR",
+    "counterparty_name": "GLOBEX S.A.",
+    "structured_reference": "INV-2026-0002",
+    "description": "Payment INV-2026-0002"
+  },
+  {
+    "id": "TXN-0003",
+    "date": "2026-02-25",
+    "amount": 871.65,
+    "currency": "EUR",
+    "counterparty_name": "INITECHLUXEMBOURGSARL",
+    "structured_reference": "INV-2026-0003",
+    "description": "Payment INV-2026-0003"
+  },
+  {
+    "id": "TXN-0004",
+    "date": "2026-02-15",
+    "amount": 1737.45,
+    "currency": "EUR",
+    "counterparty_name": "Umbrella SCS / IBAN LU28 0019 4006 4475 0000",
+    "structured_reference": "INV-2026-0004",
+    "description": "Payment INV-2026-0004"
+  },
+  {
+    "id": "TXN-0005",
+    "date": "2026-03-06",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "Hooli SARL-S",
+    "structured_reference": "INV-2026-0005",
+    "description": "Payment INV-2026-0005"
+  },
+  {
+    "id": "TXN-0006",
+    "date": "2026-02-26",
+    "amount": 1281.15,
+    "currency": "EUR",
+    "counterparty_name": "WAYNE INDUSTRIES SARL",
+    "structured_reference": "INV-2026-0006",
+    "description": "Payment INV-2026-0006"
+  },
+  {
+    "id": "TXN-0007",
+    "date": "2026-03-07",
+    "amount": 2562.3,
+    "currency": "EUR",
+    "counterparty_name": "STARK CONSULTING S.A.",
+    "structured_reference": "INV-2026-0007",
+    "description": "Payment INV-2026-0007"
+  },
+  {
+    "id": "TXN-0008",
+    "date": "2026-02-28",
+    "amount": 585,
+    "currency": "EUR",
+    "counterparty_name": "Pied Piper SCA / IBAN LU28 0019 4006 4475 0000",
+    "structured_reference": "INV-2026-0008",
+    "description": "Payment INV-2026-0008"
+  },
+  {
+    "id": "TXN-0009",
+    "date": "2026-02-16",
+    "amount": 228.15,
+    "currency": "EUR",
+    "counterparty_name": "Acme Sarl",
+    "structured_reference": "INV-2026-0009",
+    "description": "Payment INV-2026-0009"
+  },
+  {
+    "id": "TXN-0010",
+    "date": "2026-02-10",
+    "amount": 988.65,
+    "currency": "EUR",
+    "counterparty_name": "Globex S.A.",
+    "structured_reference": "INV-2026-0010",
+    "description": "Payment INV-2026-0010"
+  },
+  {
+    "id": "TXN-0011",
+    "date": "2026-03-20",
+    "amount": 1842.75,
+    "currency": "EUR",
+    "counterparty_name": "INITECH LUXEMBOURG SARL",
+    "structured_reference": "INV-2026-0011",
+    "description": "Payment INV-2026-0011"
+  },
+  {
+    "id": "TXN-0012",
+    "date": "2026-02-17",
+    "amount": 965.25,
+    "currency": "EUR",
+    "counterparty_name": "Umbrella SCS",
+    "structured_reference": "INV-2026-0012",
+    "description": "Payment INV-2026-0012"
+  },
+  {
+    "id": "TXN-0013",
+    "date": "2026-02-13",
+    "amount": 175.5,
+    "currency": "EUR",
+    "counterparty_name": "Hooli SARL-S",
+    "structured_reference": "INV-2026-0013",
+    "description": "Payment INV-2026-0013"
+  },
+  {
+    "id": "TXN-0014",
+    "date": "2026-02-26",
+    "amount": 175.5,
+    "currency": "EUR",
+    "counterparty_name": "WAYNE INDUSTRIES SARL",
+    "structured_reference": "INV-2026-0014",
+    "description": "Payment INV-2026-0014"
+  },
+  {
+    "id": "TXN-0015",
+    "date": "2026-03-06",
+    "amount": 2843.1,
+    "currency": "EUR",
+    "counterparty_name": "Stark Consulting S.A.",
+    "structured_reference": "INV-2026-0015",
+    "description": "Payment INV-2026-0015"
+  },
+  {
+    "id": "TXN-0016",
+    "date": "2026-02-25",
+    "amount": 614.25,
+    "currency": "EUR",
+    "counterparty_name": "Pied Piper SCA",
+    "structured_reference": "INV-2026-0016",
+    "description": "Payment INV-2026-0016"
+  },
+  {
+    "id": "TXN-0017",
+    "date": "2026-02-24",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "Acme S.à r.l.",
+    "structured_reference": "INV-2026-0017",
+    "description": "Payment INV-2026-0017"
+  },
+  {
+    "id": "TXN-0018",
+    "date": "2026-02-16",
+    "amount": 122.85,
+    "currency": "EUR",
+    "counterparty_name": "Globex S.A.",
+    "structured_reference": "INV-2026-0018",
+    "description": "Payment INV-2026-0018"
+  },
+  {
+    "id": "TXN-0019",
+    "date": "2026-02-26",
+    "amount": 421.2,
+    "currency": "EUR",
+    "counterparty_name": "INITECH LUXEMBOURG SARL",
+    "structured_reference": "INV-2026-0019",
+    "description": "Payment INV-2026-0019"
+  },
+  {
+    "id": "TXN-0020",
+    "date": "2026-03-02",
+    "amount": 1269.45,
+    "currency": "EUR",
+    "counterparty_name": "UMBRELLA SCS",
+    "structured_reference": "INV-2026-0020",
+    "description": "Payment INV-2026-0020"
+  },
+  {
+    "id": "TXN-0021",
+    "date": "2026-02-26",
+    "amount": 81.9,
+    "currency": "EUR",
+    "counterparty_name": "HOOLISARL-S",
+    "structured_reference": "INV-2026-0021",
+    "description": "Payment INV-2026-0021"
+  },
+  {
+    "id": "TXN-0022",
+    "date": "2026-03-05",
+    "amount": 2749.5,
+    "currency": "EUR",
+    "counterparty_name": "WAYNE INDUSTRIES SARL",
+    "structured_reference": "INV-2026-0022",
+    "description": "Payment INV-2026-0022"
+  },
+  {
+    "id": "TXN-0023",
+    "date": "2026-03-15",
+    "amount": 1076.4,
+    "currency": "EUR",
+    "counterparty_name": "STARKCONSULTINGS.A.",
+    "structured_reference": "INV-2026-0023",
+    "description": "Payment INV-2026-0023"
+  },
+  {
+    "id": "TXN-0024",
+    "date": "2026-02-22",
+    "amount": 579.15,
+    "currency": "EUR",
+    "counterparty_name": "Pied Piper SCA / IBAN LU28 0019 4006 4475 0000",
+    "structured_reference": "INV-2026-0024",
+    "description": "Payment INV-2026-0024"
+  },
+  {
+    "id": "TXN-0025",
+    "date": "2026-02-24",
+    "amount": 1088.1,
+    "currency": "EUR",
+    "counterparty_name": "Acme Sarl",
+    "structured_reference": "INV-2026-0025",
+    "description": "Payment INV-2026-0025"
+  },
+  {
+    "id": "TXN-0026",
+    "date": "2026-02-25",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "INITECHLUXEMBOURGSARL",
+    "structured_reference": "INV-2026-0026",
+    "description": "Partial 1/2 INV-2026-0026"
+  },
+  {
+    "id": "TXN-0027",
+    "date": "2026-03-15",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "INITECHLUXEMBOURGSARL",
+    "structured_reference": "INV-2026-0026",
+    "description": "Partial 2/2 INV-2026-0026"
+  },
+  {
+    "id": "TXN-0028",
+    "date": "2026-02-26",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "UMBRELLA SCS",
+    "structured_reference": "INV-2026-0027",
+    "description": "Partial 1/2 INV-2026-0027"
+  },
+  {
+    "id": "TXN-0029",
+    "date": "2026-03-16",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "UMBRELLA SCS",
+    "structured_reference": "INV-2026-0027",
+    "description": "Partial 2/2 INV-2026-0027"
+  },
+  {
+    "id": "TXN-0030",
+    "date": "2026-03-20",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "HOOLI SARL-S",
+    "structured_reference": null,
+    "description": "Payment for INV-2026-0028, INV-2026-0029, INV-2026-0030"
+  },
+  {
+    "id": "TXN-0031",
+    "date": "2026-03-21",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "WAYNE INDUSTRIES SARL",
+    "structured_reference": null,
+    "description": "Payment for INV-2026-0031, INV-2026-0032, INV-2026-0033"
+  },
+  {
+    "id": "TXN-0032",
+    "date": "2026-03-10",
+    "amount": 1825.2,
+    "currency": "EUR",
+    "counterparty_name": "GLOBEXS.A.",
+    "structured_reference": "INV-2026-0034 CN-2026-0001",
+    "description": "Net payment INV-2026-0034 less CN-2026-0001"
+  },
+  {
+    "id": "TXN-0033",
+    "date": "2026-03-11",
+    "amount": 1825.2,
+    "currency": "EUR",
+    "counterparty_name": "Initech Luxembourg SARL",
+    "structured_reference": "INV-2026-0035 CN-2026-0002",
+    "description": "Net payment INV-2026-0035 less CN-2026-0002"
+  },
+  {
+    "id": "TXN-0034",
+    "date": "2026-02-28",
+    "amount": 526.37,
+    "currency": "EUR",
+    "counterparty_name": "UMBRELLA SCS",
+    "structured_reference": "INV-2026-0036",
+    "description": "FX settled INV-2026-0036"
+  },
+  {
+    "id": "TXN-0035",
+    "date": "2026-03-01",
+    "amount": 526.57,
+    "currency": "EUR",
+    "counterparty_name": "HOOLI SARL-S",
+    "structured_reference": "INV-2026-0037",
+    "description": "FX settled INV-2026-0037"
+  },
+  {
+    "id": "TXN-0036",
+    "date": "2026-03-02",
+    "amount": 526.28,
+    "currency": "EUR",
+    "counterparty_name": "WAYNE INDUSTRIES SARL",
+    "structured_reference": "INV-2026-0038",
+    "description": "FX settled INV-2026-0038"
+  },
+  {
+    "id": "TXN-0037",
+    "date": "2026-03-05",
+    "amount": 321.75,
+    "currency": "EUR",
+    "counterparty_name": "Wayne Industries Sarl",
+    "structured_reference": null,
+    "description": "Virement: INV 20260039"
+  },
+  {
+    "id": "TXN-0038",
+    "date": "2026-03-06",
+    "amount": 321.75,
+    "currency": "EUR",
+    "counterparty_name": "Stark Consulting S.A.",
+    "structured_reference": null,
+    "description": "Virement: INV0040/2026"
+  },
+  {
+    "id": "TXN-0039",
+    "date": "2026-03-07",
+    "amount": 321.75,
+    "currency": "EUR",
+    "counterparty_name": "PIED PIPER SCA",
+    "structured_reference": null,
+    "description": "Virement: facture numéro 41 février"
+  },
+  {
+    "id": "TXN-0040",
+    "date": "2026-03-06",
+    "amount": 215.6,
+    "currency": "EUR",
+    "counterparty_name": "INITECH LUXEMBOURG SARL",
+    "structured_reference": "INV-2026-0042",
+    "description": "Payment INV-2026-0042 (rounded up)"
+  },
+  {
+    "id": "TXN-0041",
+    "date": "2026-03-07",
+    "amount": 215.97,
+    "currency": "EUR",
+    "counterparty_name": "Umbrella SCS",
+    "structured_reference": "INV-2026-0043",
+    "description": "Payment INV-2026-0043 (rounded up)"
+  },
+  {
+    "id": "TXN-0042",
+    "date": "2026-03-12",
+    "amount": 361.9,
+    "currency": "EUR",
+    "counterparty_name": "PIED PIPER SCA",
+    "structured_reference": "INV-2026-0044",
+    "description": "Part-payment INV-2026-0044"
+  },
+  {
+    "id": "TXN-0043",
+    "date": "2026-03-15",
+    "amount": 2720.73,
+    "currency": "EUR",
+    "counterparty_name": "STRIPE PAYMENTS LUXEMBOURG",
+    "structured_reference": "po_1NfK2r2026EasyBiz",
+    "description": "Stripe payout — see report po_1NfK2r2026EasyBiz"
+  },
+  {
+    "id": "TXN-0044",
+    "date": "2026-02-05",
+    "amount": 1500,
+    "currency": "EUR",
+    "counterparty_name": "Stark Consulting S.A.",
+    "structured_reference": null,
+    "description": "Advance payment for upcoming services"
+  },
+  {
+    "id": "TXN-0045",
+    "date": "2026-02-26",
+    "amount": 1123.2,
+    "currency": "EUR",
+    "counterparty_name": "Acme Sarl",
+    "structured_reference": "INV-2026-0001",
+    "description": "[RE-IMPORTED] Payment INV-2026-0001"
+  },
+  {
+    "id": "TXN-0046",
+    "date": "2026-02-19",
+    "amount": 122.85,
+    "currency": "EUR",
+    "counterparty_name": "GLOBEX S.A.",
+    "structured_reference": "INV-2026-0002",
+    "description": "[RE-IMPORTED] Payment INV-2026-0002"
+  },
+  {
+    "id": "TXN-0047",
+    "date": "2026-02-25",
+    "amount": 871.65,
+    "currency": "EUR",
+    "counterparty_name": "INITECHLUXEMBOURGSARL",
+    "structured_reference": "INV-2026-0003",
+    "description": "[RE-IMPORTED] Payment INV-2026-0003"
+  },
+  {
+    "id": "TXN-0048",
+    "date": "2026-02-15",
+    "amount": 1737.45,
+    "currency": "EUR",
+    "counterparty_name": "Umbrella SCS / IBAN LU28 0019 4006 4475 0000",
+    "structured_reference": "INV-2026-0004",
+    "description": "[RE-IMPORTED] Payment INV-2026-0004"
+  },
+  {
+    "id": "TXN-0049",
+    "date": "2026-03-06",
+    "amount": 1404,
+    "currency": "EUR",
+    "counterparty_name": "Hooli SARL-S",
+    "structured_reference": "INV-2026-0005",
+    "description": "[RE-IMPORTED] Payment INV-2026-0005"
+  },
+  {
+    "id": "TXN-0050",
+    "date": "2026-02-24",
+    "amount": -2996.27,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ PAYROLL",
+    "structured_reference": null,
+    "description": "Salary: M. Lambert"
+  },
+  {
+    "id": "TXN-0051",
+    "date": "2026-02-22",
+    "amount": -2500,
+    "currency": "EUR",
+    "counterparty_name": "IMMO LUX SA",
+    "structured_reference": null,
+    "description": "Rent — office Rue de la Gare"
+  },
+  {
+    "id": "TXN-0052",
+    "date": "2026-02-10",
+    "amount": -18.5,
+    "currency": "EUR",
+    "counterparty_name": "BCEE",
+    "structured_reference": null,
+    "description": "Bank fees — monthly"
+  },
+  {
+    "id": "TXN-0053",
+    "date": "2026-02-21",
+    "amount": 3.12,
+    "currency": "EUR",
+    "counterparty_name": "BCEE",
+    "structured_reference": null,
+    "description": "Interest credit Q1"
+  },
+  {
+    "id": "TXN-0054",
+    "date": "2026-03-25",
+    "amount": 75.66,
+    "currency": "EUR",
+    "counterparty_name": "AMZN LUXEMBOURG",
+    "structured_reference": null,
+    "description": "Card refund — Amazon"
+  },
+  {
+    "id": "TXN-0055",
+    "date": "2026-02-22",
+    "amount": 536.92,
+    "currency": "EUR",
+    "counterparty_name": "ADMINISTRATION DE L'ENREGISTREMENT",
+    "structured_reference": null,
+    "description": "VAT refund CSSF"
+  },
+  {
+    "id": "TXN-0056",
+    "date": "2026-03-07",
+    "amount": -148.39,
+    "currency": "EUR",
+    "counterparty_name": "PAPETERIE LUX",
+    "structured_reference": null,
+    "description": "Office supplies"
+  },
+  {
+    "id": "TXN-0057",
+    "date": "2026-03-16",
+    "amount": -247.99,
+    "currency": "EUR",
+    "counterparty_name": "ENOVOS LUXEMBOURG",
+    "structured_reference": null,
+    "description": "Electricity bill"
+  },
+  {
+    "id": "TXN-0058",
+    "date": "2026-03-11",
+    "amount": -4446.01,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ HOLDING SARL",
+    "structured_reference": null,
+    "description": "Internal transfer"
+  },
+  {
+    "id": "TXN-0059",
+    "date": "2026-02-16",
+    "amount": -89,
+    "currency": "EUR",
+    "counterparty_name": "SLACK TECHNOLOGIES",
+    "structured_reference": null,
+    "description": "SaaS subscription — Slack"
+  },
+  {
+    "id": "TXN-0060",
+    "date": "2026-02-20",
+    "amount": -2878.7,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ PAYROLL",
+    "structured_reference": null,
+    "description": "Salary: M. Lambert"
+  },
+  {
+    "id": "TXN-0061",
+    "date": "2026-03-02",
+    "amount": -2500,
+    "currency": "EUR",
+    "counterparty_name": "IMMO LUX SA",
+    "structured_reference": null,
+    "description": "Rent — office Rue de la Gare"
+  },
+  {
+    "id": "TXN-0062",
+    "date": "2026-03-02",
+    "amount": -18.5,
+    "currency": "EUR",
+    "counterparty_name": "BCEE",
+    "structured_reference": null,
+    "description": "Bank fees — monthly"
+  },
+  {
+    "id": "TXN-0063",
+    "date": "2026-03-08",
+    "amount": 3.12,
+    "currency": "EUR",
+    "counterparty_name": "BCEE",
+    "structured_reference": null,
+    "description": "Interest credit Q1"
+  },
+  {
+    "id": "TXN-0064",
+    "date": "2026-02-03",
+    "amount": 42.64,
+    "currency": "EUR",
+    "counterparty_name": "AMZN LUXEMBOURG",
+    "structured_reference": null,
+    "description": "Card refund — Amazon"
+  },
+  {
+    "id": "TXN-0065",
+    "date": "2026-03-26",
+    "amount": 459.61,
+    "currency": "EUR",
+    "counterparty_name": "ADMINISTRATION DE L'ENREGISTREMENT",
+    "structured_reference": null,
+    "description": "VAT refund CSSF"
+  },
+  {
+    "id": "TXN-0066",
+    "date": "2026-02-15",
+    "amount": -247.07,
+    "currency": "EUR",
+    "counterparty_name": "PAPETERIE LUX",
+    "structured_reference": null,
+    "description": "Office supplies"
+  },
+  {
+    "id": "TXN-0067",
+    "date": "2026-03-22",
+    "amount": -252.32,
+    "currency": "EUR",
+    "counterparty_name": "ENOVOS LUXEMBOURG",
+    "structured_reference": null,
+    "description": "Electricity bill"
+  },
+  {
+    "id": "TXN-0068",
+    "date": "2026-03-21",
+    "amount": -2849.37,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ HOLDING SARL",
+    "structured_reference": null,
+    "description": "Internal transfer"
+  },
+  {
+    "id": "TXN-0069",
+    "date": "2026-03-28",
+    "amount": -89,
+    "currency": "EUR",
+    "counterparty_name": "SLACK TECHNOLOGIES",
+    "structured_reference": null,
+    "description": "SaaS subscription — Slack"
+  },
+  {
+    "id": "TXN-0070",
+    "date": "2026-03-20",
+    "amount": -2866.17,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ PAYROLL",
+    "structured_reference": null,
+    "description": "Salary: M. Lambert"
+  },
+  {
+    "id": "TXN-0071",
+    "date": "2026-03-25",
+    "amount": -2500,
+    "currency": "EUR",
+    "counterparty_name": "IMMO LUX SA",
+    "structured_reference": null,
+    "description": "Rent — office Rue de la Gare"
+  },
+  {
+    "id": "TXN-0072",
+    "date": "2026-02-14",
+    "amount": -18.5,
+    "currency": "EUR",
+    "counterparty_name": "BCEE",
+    "structured_reference": null,
+    "description": "Bank fees — monthly"
+  },
+  {
+    "id": "TXN-0073",
+    "date": "2026-02-11",
+    "amount": 3.12,
+    "currency": "EUR",
+    "counterparty_name": "BCEE",
+    "structured_reference": null,
+    "description": "Interest credit Q1"
+  },
+  {
+    "id": "TXN-0074",
+    "date": "2026-02-19",
+    "amount": 30.57,
+    "currency": "EUR",
+    "counterparty_name": "AMZN LUXEMBOURG",
+    "structured_reference": null,
+    "description": "Card refund — Amazon"
+  },
+  {
+    "id": "TXN-0075",
+    "date": "2026-02-06",
+    "amount": 735.17,
+    "currency": "EUR",
+    "counterparty_name": "ADMINISTRATION DE L'ENREGISTREMENT",
+    "structured_reference": null,
+    "description": "VAT refund CSSF"
+  },
+  {
+    "id": "TXN-0076",
+    "date": "2026-02-18",
+    "amount": -126.28,
+    "currency": "EUR",
+    "counterparty_name": "PAPETERIE LUX",
+    "structured_reference": null,
+    "description": "Office supplies"
+  },
+  {
+    "id": "TXN-0077",
+    "date": "2026-03-08",
+    "amount": -303.11,
+    "currency": "EUR",
+    "counterparty_name": "ENOVOS LUXEMBOURG",
+    "structured_reference": null,
+    "description": "Electricity bill"
+  },
+  {
+    "id": "TXN-0078",
+    "date": "2026-02-27",
+    "amount": -3473.24,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ HOLDING SARL",
+    "structured_reference": null,
+    "description": "Internal transfer"
+  },
+  {
+    "id": "TXN-0079",
+    "date": "2026-02-25",
+    "amount": -89,
+    "currency": "EUR",
+    "counterparty_name": "SLACK TECHNOLOGIES",
+    "structured_reference": null,
+    "description": "SaaS subscription — Slack"
+  },
+  {
+    "id": "TXN-0080",
+    "date": "2026-02-27",
+    "amount": -3080.86,
+    "currency": "EUR",
+    "counterparty_name": "EASYBIZ PAYROLL",
+    "structured_reference": null,
+    "description": "Salary: M. Lambert"
+  }
+]

@@ -1,0 +1,9 @@
+charge_id,invoice_id,customer_name,gross_amount,fee,net_amount,type
+ch_30NfK,INV-2026-0045,Acme S.à r.l.,526.50,15.52,510.98,charge
+ch_31NfK,INV-2026-0046,Globex S.A.,561.60,16.54,545.06,charge
+ch_32NfK,INV-2026-0047,Initech Luxembourg SARL,596.70,17.55,579.15,charge
+ch_33NfK,INV-2026-0048,Umbrella SCS,631.80,18.57,613.23,charge
+ch_34NfK,INV-2026-0049,Hooli SARL-S,666.90,19.59,647.31,charge
+rf_A1,,Globex S.A.,-125.00,0.00,-125.00,refund
+cb_B1,,Hooli SARL-S,-50.00,0.00,-50.00,chargeback
+po_1NfK2r2026EasyBiz,,PAYOUT TOTAL,,,2720.73,payout
