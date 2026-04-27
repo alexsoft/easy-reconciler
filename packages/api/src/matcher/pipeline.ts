@@ -9,6 +9,7 @@ import { runR4NameAmountDate } from "./rules/r4-name-amount-date.js";
 import { runR5SubsetSum } from "./rules/r5-subset-sum.js";
 import { runR6CreditNoteNet } from "./rules/r6-credit-note-net.js";
 import { runR7PayoutLink } from "./rules/r7-payout-link.js";
+import { runR8Noise } from "./rules/r8-noise.js";
 import { recomputeTxStatus } from "./update-tx-status.js";
 
 export interface MatcherReport {
@@ -35,6 +36,7 @@ export async function runMatcher(db: DB): Promise<MatcherReport> {
   await runR5SubsetSum(db, matcherConfig, fired);
   await runR6CreditNoteNet(db, matcherConfig, fired);
   await runR7PayoutLink(db, matcherConfig, fired);
+  await runR8Noise(db, matcherConfig, fired);
 
   for (const tx of txs) await recomputeTxStatus(db, tx.id);
 
