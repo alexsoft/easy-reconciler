@@ -1,0 +1,19 @@
+# AI Workflow
+
+## Tools used
+
+- **Claude Code** (claude-sonnet-4-6) — primary model for all non-trivial tasks: schema design, matcher rules, test writing, API routes, UI components
+- **Claude Code** (claude-haiku-4-5) — rote scaffolding: boilerplate files, type stubs, repetitive test fixtures
+- **Skill:** `superpowers:subagent-driven-development` — each implementation task was dispatched to a fresh subagent with its full task text; the controller session reviewed output and coordinated sequencing without polluting subagent context
+
+## How it was used
+
+The project spec and plan were written first (see `docs/superpowers/specs/` and `docs/superpowers/plans/`). Execution was subagent-driven: each discrete task (e.g. "implement R3 fuzzy-ref rule with tests") was handed off to a fresh subagent with the full task text and relevant context. After each dispatch, the controller reviewed spec compliance and code quality before moving to the next task. No subagent carried state from a prior subagent's session, which kept each task isolated and reproducible.
+
+## One override
+
+The AI proposed mocking the database in the 80-transaction fixture sweep test. This was overridden. Mock/production divergence is the primary failure mode for reconciliation matchers — SQL query shape, index behaviour, and trigger side-effects all matter. The sweep runs against a real Postgres 18 instance with real fixture data loaded by the seed script.
+
+## One big save
+
+The AI generated all 8 matcher rule files (R1–R8) in sequence using TDD. Each dispatch produced a correct implementation and a passing test suite on the first attempt. Notably, R3 includes a Jaro-Winkler string-similarity function written from scratch in TypeScript with no external NLP/ML dependencies — the implementation was mathematically correct on the first dispatch with no manual correction needed.
