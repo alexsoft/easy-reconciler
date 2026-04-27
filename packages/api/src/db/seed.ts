@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
+import { parse as parseCsv } from "csv-parse/sync";
 import { db, pool } from "./client.js";
-import { invoices, invoice_lines, transactions } from "./schema.js";
+import { invoices, invoice_lines, transactions, payout_batches, payout_items } from "./schema.js";
 import {
   InvoiceSchema,
   TransactionSchema,
@@ -94,10 +95,54 @@ async function seedTransactions() {
   console.log(`seeded ${parsed.length} transactions`);
 }
 
+async function seedPayout() {
+  const raw = readFileSync(`${taskDir}/payout_report.csv`, "utf-8");
+  const rows = parseCsv(raw, { columns: true, skip_empty_lines: true }) as Array<Record<string, string>>;
+
+  const totalRow = rows.find((r) => r.type === "payout");
+  if (!totalRow) throw new Error("payout total row missing");
+
+  const charges = rows.filter((r) => r.type === "charge");
+  const refunds = rows.filter((r) => r.type === "refund");
+  const chargebacks = rows.filter((r) => r.type === "chargeback");
+
+  const grossTotal = [...charges, ...refunds, ...chargebacks]
+    .reduce((s, r) => s + toCents(Number(r.gross_amount || "0")), 0);
+  const feeTotal = [...charges, ...refunds, ...chargebacks]
+    .reduce((s, r) => s + toCents(Number(r.fee || "0")), 0);
+  const netTotal = toCents(Number(totalRow.net_amount));
+
+  const batchId = totalRow.charge_id;
+  await db.insert(payout_batches).values({
+    id: batchId,
+    transaction_id: null,
+    gross_total: grossTotal,
+    fee_total: feeTotal,
+    net_total: netTotal,
+  }).onConflictDoUpdate({
+    target: payout_batches.id,
+    set: { gross_total: grossTotal, fee_total: feeTotal, net_total: netTotal },
+  });
+
+  for (const r of [...charges, ...refunds, ...chargebacks]) {
+    await db.insert(payout_items).values({
+      id: r.charge_id,
+      payout_batch_id: batchId,
+      invoice_id: r.invoice_id || null,
+      customer_name: r.customer_name,
+      gross_amount: toCents(Number(r.gross_amount || "0")),
+      fee: toCents(Number(r.fee || "0")),
+      net_amount: toCents(Number(r.net_amount || "0")),
+      type: r.type as "charge" | "refund" | "chargeback",
+    }).onConflictDoNothing();
+  }
+  console.log(`seeded payout batch with ${charges.length + refunds.length + chargebacks.length} items`);
+}
+
 async function main() {
   await seedInvoices();
   await seedTransactions();
-  // payout seeded in Task 19
+  await seedPayout();
   await pool.end();
 }
 
