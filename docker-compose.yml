@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: reconciler
+      POSTGRES_PASSWORD: reconciler
+      POSTGRES_DB: reconciler
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "reconciler"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://reconciler:reconciler@db:5432/reconciler
+      PORT: 3001
+      NODE_ENV: development
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["3001:3001"]
+volumes:
+  db-data: {}
