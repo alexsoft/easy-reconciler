@@ -31,3 +31,7 @@ True credit-note netting requires a real offsetting transaction (a bank credit o
 - **Prepayment ledger** — R4 (name + amount + date window) rejects transactions dated before the invoice issue date, so prepayments naturally fall through to `unmatched` for human review. A true prepayment ledger would require a credit-on-account model.
 - **Bulk reviewer actions** — confirming or rejecting 50 allocations in one click risks mass-overwriting reviewer work in a shared session. Deferred until there is a concurrency model that makes bulk safe.
 - **Matcher config UI** — fuzzy threshold, date window, and noise keywords are currently env vars. A config UI is useful but not required for correctness; deferred.
+
+## Jaro-Winkler function
+
+It was initially implemented inside of the project, without using other libraries. I thought about substituting it with a library, but decided to keep as it is in order to minimize the amount of libraries required. Especially with recent chain of supply attacks it might make sense. Or when it makes sense, own mirror of package can be used inside organization which will help prevent such issues.
