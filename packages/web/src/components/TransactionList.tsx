@@ -1,8 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useStats, useTransactions } from '../api/queries.js';
 import { StatusBadge } from './StatusBadge.js';
 import { Money } from './Money.js';
+import type { TransactionListItem } from '../api/types.js';
 import clsx from 'clsx';
+
+const TxRow = memo(function TxRow({
+  tx,
+  selected,
+  onSelect,
+}: {
+  tx: TransactionListItem;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onSelect(tx.id)}
+      className={clsx('w-full text-left px-3 py-2 border-b hover:bg-gray-50', selected && 'bg-blue-50')}
+    >
+      <div className="flex justify-between items-start">
+        <div className="font-mono text-xs text-gray-600">{tx.id}</div>
+        <Money cents={tx.amount} />
+      </div>
+      <div className="text-sm truncate">{tx.counterparty_name}</div>
+      <div className="flex justify-between items-center mt-1">
+        <span className="text-xs text-gray-500">{tx.date}</span>
+        <StatusBadge status={tx.status} />
+      </div>
+    </button>
+  );
+});
 
 const FILTERS = [
   'all',
@@ -64,24 +92,7 @@ export function TransactionList({
       <div className="flex-1 overflow-auto">
         {list.isLoading && <div className="p-3 text-sm text-gray-500">loading…</div>}
         {list.data?.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => onSelect(t.id)}
-            className={clsx(
-              'w-full text-left px-3 py-2 border-b hover:bg-gray-50',
-              selectedId === t.id && 'bg-blue-50',
-            )}
-          >
-            <div className="flex justify-between items-start">
-              <div className="font-mono text-xs text-gray-600">{t.id}</div>
-              <Money cents={t.amount} />
-            </div>
-            <div className="text-sm truncate">{t.counterparty_name}</div>
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-gray-500">{t.date}</span>
-              <StatusBadge status={t.status} />
-            </div>
-          </button>
+          <TxRow key={t.id} tx={t} selected={selectedId === t.id} onSelect={onSelect} />
         ))}
       </div>
     </div>
