@@ -2,13 +2,12 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import Fastify from 'fastify';
 import { getTestDb, truncateAll, closeTestDb } from '../helpers/db.js';
 import { transactionRoutes } from '../../src/routes/transactions.js';
-import { matcherRoutes } from '../../src/routes/matcher.js';
+import { runMatcher } from '../../src/matcher/pipeline.js';
 import { transactions, invoices } from '../../src/db/schema.js';
 
 async function buildApp() {
   const app = Fastify();
   await app.register(transactionRoutes);
-  await app.register(matcherRoutes);
   return app;
 }
 
@@ -73,8 +72,8 @@ describe('transactions API', () => {
       structured_reference: 'INV-A',
       dedup_hash: 'h1',
     });
+    await runMatcher(db);
     const app = await buildApp();
-    await app.inject({ method: 'POST', url: '/api/matcher/run' });
     const r = await app.inject({ method: 'GET', url: '/api/transactions/T1' });
     const body = JSON.parse(r.payload);
     expect(body.allocations).toHaveLength(1);
