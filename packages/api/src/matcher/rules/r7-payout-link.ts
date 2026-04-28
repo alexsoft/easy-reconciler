@@ -1,4 +1,4 @@
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull, inArray, sql } from 'drizzle-orm';
 import type { DB } from '../../db/client.js';
 import { transactions, payout_batches, payout_items, allocations, invoices } from '../../db/schema.js';
 import type { MatcherConfig } from '../config.js';
@@ -37,11 +37,17 @@ export async function runR7PayoutLink(db: DB, cfg: MatcherConfig, fired: (rule: 
     });
 
     const items = await db.select().from(payout_items).where(eq(payout_items.payout_batch_id, batch.id));
+    const invoiceIds = [...new Set(items.filter((i) => i.type === 'charge' && i.invoice_id).map((i) => i.invoice_id!))];
+    const invMap = new Map(
+      invoiceIds.length > 0
+        ? (await db.select().from(invoices).where(inArray(invoices.id, invoiceIds))).map((i) => [i.id, i])
+        : [],
+    );
     for (const item of items) {
       if (item.type !== 'charge' || !item.invoice_id) {
         continue;
       }
-      const inv = (await db.select().from(invoices).where(eq(invoices.id, item.invoice_id)).limit(1))[0];
+      const inv = invMap.get(item.invoice_id);
       if (!inv) {
         continue;
       }
