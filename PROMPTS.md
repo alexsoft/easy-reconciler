@@ -41,3 +41,11 @@ Backtracking algorithm with early exit, correct uniqueness check, and tolerance 
 > Write an integration test that sends two concurrent PUT /api/transactions/:id/allocations requests with the same version number and asserts exactly one succeeds with 200 and the other fails with 409. Use the real test database, not mocks.
 
 Produced a clean `Promise.all` concurrency test against the real Postgres instance; no mock involvement.
+
+---
+
+**6. Review**
+> Review the project from following points of view: performance, code quality, code organization, security. You can use sub agents.
+  In the end create a table with comments and short descriptions how to improve that
+
+Produced a good quality list of things to fix: N+1 queries, missing indexes, some possible DoS vectors, possible issues with authorization, missing validation rules, etc.
