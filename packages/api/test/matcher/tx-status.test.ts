@@ -55,6 +55,24 @@ describe('recomputeTxStatus', () => {
     expect(t.status).toBe('auto_matched');
   });
 
+  it('manually_matched when fully covered by manual confirmed allocations', async () => {
+    const { db } = await getTestDb();
+    await seedTx(db, { id: 'T1', amount: 1000 });
+    await seedInv(db, 'I1', 1000);
+    await db.insert(allocations).values({
+      id: cuid(),
+      transaction_id: 'T1',
+      invoice_id: 'I1',
+      amount: 1000,
+      status: 'confirmed',
+      source: 'manual',
+      created_by: 'reviewer',
+    });
+    await recomputeTxStatus(db, 'T1');
+    const t = (await db.select().from(transactions).where(eq(transactions.id, 'T1')))[0]!;
+    expect(t.status).toBe('manually_matched');
+  });
+
   it('partially_allocated when confirmed sum < tx amount', async () => {
     const { db } = await getTestDb();
     await seedTx(db, { id: 'T1', amount: 1000 });

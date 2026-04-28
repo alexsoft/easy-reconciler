@@ -78,7 +78,7 @@ export async function allocationsRoutes(app: FastifyInstance) {
         const tx0 = updated[0]!;
         let status: string;
         if (sum >= tx0.amount) {
-          status = 'auto_matched';
+          status = 'manually_matched';
         } else if (sum > 0) {
           status = 'partially_allocated';
         } else {

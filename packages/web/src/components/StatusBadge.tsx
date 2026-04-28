@@ -2,6 +2,7 @@ import clsx from 'clsx';
 const styles: Record<string, string> = {
   unmatched: 'bg-gray-200 text-gray-800',
   auto_matched: 'bg-green-100 text-green-800',
+  manually_matched: 'bg-teal-100 text-teal-800',
   partially_allocated: 'bg-yellow-100 text-yellow-800',
   needs_review: 'bg-orange-100 text-orange-800',
   unrelated: 'bg-slate-200 text-slate-700',

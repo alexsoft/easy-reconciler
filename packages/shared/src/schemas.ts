@@ -51,6 +51,7 @@ export type PayoutItemCsv = z.infer<typeof PayoutItemCsvSchema>;
 export const TxStatus = z.enum([
   'unmatched',
   'auto_matched',
+  'manually_matched',
   'partially_allocated',
   'needs_review',
   'unrelated',

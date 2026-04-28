@@ -11,8 +11,8 @@ export async function recomputeTxStatus(db: DB, txId: string): Promise<void> {
     return;
   }
 
-  const confirmed = await db
-    .select({ sum: sql<string | null>`coalesce(sum(${allocations.amount}), 0)` })
+  const confirmedRows = await db
+    .select({ amount: allocations.amount, source: allocations.source })
     .from(allocations)
     .where(and(eq(allocations.transaction_id, txId), eq(allocations.status, 'confirmed')));
   const proposed = await db
@@ -20,12 +20,13 @@ export async function recomputeTxStatus(db: DB, txId: string): Promise<void> {
     .from(allocations)
     .where(and(eq(allocations.transaction_id, txId), eq(allocations.status, 'proposed')));
 
-  const confirmedSum = Number(confirmed[0]?.sum ?? 0);
+  const confirmedSum = confirmedRows.reduce((s, r) => s + r.amount, 0);
+  const hasManual = confirmedRows.some((r) => r.source === 'manual');
   const proposedCount = Number(proposed[0]?.count ?? 0);
 
   let nextStatus: string;
   if (confirmedSum > 0 && confirmedSum >= tx.amount) {
-    nextStatus = 'auto_matched';
+    nextStatus = hasManual ? 'manually_matched' : 'auto_matched';
   } else if (confirmedSum > 0) {
     nextStatus = 'partially_allocated';
   } else if (proposedCount > 0) {
