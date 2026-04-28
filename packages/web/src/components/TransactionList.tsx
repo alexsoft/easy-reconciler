@@ -36,6 +36,7 @@ const FILTERS = [
   'all',
   'needs_review',
   'auto_matched',
+  'manually_matched',
   'unmatched',
   'unrelated',
   'partially_allocated',
