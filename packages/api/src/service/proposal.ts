@@ -1,12 +1,12 @@
 import { eq, and, sql } from 'drizzle-orm';
-import type { DB } from '../db/client.js';
+import type { DB, DBOrTx } from '../db/client.js';
 import { allocations, transactions } from '../db/schema.js';
 import { recordAudit } from '../db/audit.js';
 import { getAllocationById, setAllocationConfirmed, setAllocationRejected } from '../repository/allocations.js';
 
 export type ProposalResult = { ok: true; version: number } | { ok: false; code: 404 | 409; error: string };
 
-async function bumpTxVersion(db: DB, txId: string, version: number) {
+async function bumpTxVersion(db: DBOrTx, txId: string, version: number) {
   const updated = await db
     .update(transactions)
     .set({ version: sql`version + 1`, updated_at: sql`now()` })

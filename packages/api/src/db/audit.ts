@@ -1,5 +1,5 @@
 import cuid from 'cuid';
-import type { DB } from './client.js';
+import type { DBOrTx } from './client.js';
 import { audit_log } from './schema.js';
 
 export type AuditAction =
@@ -27,7 +27,7 @@ export interface AuditEntry {
   after?: unknown;
 }
 
-export async function recordAudit(tx: DB, entry: AuditEntry): Promise<void> {
+export async function recordAudit(tx: DBOrTx, entry: AuditEntry): Promise<void> {
   await tx.insert(audit_log).values({
     id: cuid(),
     entity_type: entry.entity_type,

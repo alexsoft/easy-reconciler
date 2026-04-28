@@ -7,4 +7,6 @@ const pool = new pg.Pool({ connectionString: env.DATABASE_URL, max: 10 });
 
 export const db = drizzle(pool, { schema });
 export type DB = typeof db;
+export type Tx = Parameters<DB['transaction']>[0] extends (tx: infer T) => unknown ? T : never;
+export type DBOrTx = DB | Tx;
 export { pool };

@@ -30,7 +30,7 @@ export async function transactionRoutes(app: FastifyInstance) {
           ilike(transactions.counterparty_name, like),
           ilike(transactions.description, like),
           ilike(transactions.structured_reference, like),
-        ),
+        )!,
       );
     }
     return db
