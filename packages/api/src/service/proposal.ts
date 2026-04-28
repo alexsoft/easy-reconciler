@@ -2,7 +2,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import type { DB } from '../db/client.js';
 import { allocations, transactions } from '../db/schema.js';
 import { recordAudit } from '../db/audit.js';
-import { getAllocationById } from '../repository/allocations.js';
+import { getAllocationById, setAllocationStatus } from '../repository/allocations.js';
 
 export type ProposalResult = { ok: true; version: number } | { ok: false; code: 404 | 409; error: string };
 
@@ -26,10 +26,10 @@ export async function applyProposal(db: DB, proposalId: string, action: 'accept'
       return { ok: false, code: 409, error: 'version_conflict' };
     }
     if (action === 'accept') {
-      await tx.update(allocations).set({ status: 'confirmed', source: 'manual' }).where(eq(allocations.id, prop.id));
+      await setAllocationStatus(tx, prop.id, 'confirmed');
       await recordAudit(tx, { entity_type: 'allocation', entity_id: prop.id, action: 'reviewer_confirmed', actor: 'reviewer', before: prop, after: { ...prop, status: 'confirmed' } });
     } else {
-      await tx.update(allocations).set({ status: 'rejected' }).where(eq(allocations.id, prop.id));
+      await setAllocationStatus(tx, prop.id, 'rejected');
       await recordAudit(tx, { entity_type: 'allocation', entity_id: prop.id, action: 'reviewer_rejected', actor: 'reviewer', before: prop, after: { ...prop, status: 'rejected' } });
     }
     return { ok: true, version: txRow.version };

@@ -4,6 +4,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { payout_batches, payout_items, allocations, transactions } from '../db/schema.js';
 import { recordAudit } from '../db/audit.js';
+import { setAllocationStatus } from '../repository/allocations.js';
 
 const Body = z.object({
   version: z.number().int(),
@@ -49,14 +50,7 @@ export async function payoutRoutes(app: FastifyInstance) {
           if (!existing) {
             continue;
           }
-          if (accepted.has(item.id)) {
-            await tx
-              .update(allocations)
-              .set({ status: 'confirmed', source: 'manual' })
-              .where(eq(allocations.id, existing.id));
-          } else {
-            await tx.update(allocations).set({ status: 'rejected' }).where(eq(allocations.id, existing.id));
-          }
+          await setAllocationStatus(tx, existing.id, accepted.has(item.id) ? 'confirmed' : 'rejected');
         }
         await tx.update(payout_batches).set({ status: 'confirmed' }).where(eq(payout_batches.id, batch.id));
         await recordAudit(tx, {
