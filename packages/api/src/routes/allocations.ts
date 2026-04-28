@@ -28,8 +28,8 @@ export async function allocationsRoutes(app: FastifyInstance) {
           .where(and(eq(transactions.id, req.params.id), eq(transactions.version, body.version)))
           .returning();
         if (updated.length === 0) {
-          const current = (await tx.select().from(transactions).where(eq(transactions.id, req.params.id)))[0];
-          return reply.code(409).send({ error: 'version_conflict', current });
+          const current = (await tx.select({ version: transactions.version }).from(transactions).where(eq(transactions.id, req.params.id)))[0];
+          return reply.code(409).send({ error: 'version_conflict', version: current?.version });
         }
 
         const before = await tx.select().from(allocations).where(eq(allocations.transaction_id, req.params.id));
