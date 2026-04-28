@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS "allocations_invoice_idx" ON "allocations" USING btree ("invoice_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "invoice_lines_invoice_idx" ON "invoice_lines" USING btree ("invoice_id");

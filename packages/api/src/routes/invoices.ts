@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { and, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, ilike, or, sql, sum, type SQL } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { invoices, allocations } from '../db/schema.js';
 
@@ -36,9 +36,20 @@ export async function invoiceRoutes(app: FastifyInstance) {
         issue_date: invoices.issue_date,
         due_date: invoices.due_date,
         total: invoices.total,
-        allocated: sql<string>`coalesce((select sum(amount) from ${allocations} where invoice_id = ${invoices.id} and status = 'confirmed'), 0)`,
+        allocated: sql<string>`coalesce(${sum(allocations.amount)}, 0)`,
       })
       .from(invoices)
+      .leftJoin(allocations, and(eq(allocations.invoice_id, invoices.id), eq(allocations.status, 'confirmed')))
+      .groupBy(
+        invoices.id,
+        invoices.type,
+        invoices.customer_id,
+        invoices.customer_name,
+        invoices.currency,
+        invoices.issue_date,
+        invoices.due_date,
+        invoices.total,
+      )
       .where(filters.length ? and(...filters) : undefined);
 
     return rows.map((r) => ({ ...r, balance: r.total - Number(r.allocated) }));

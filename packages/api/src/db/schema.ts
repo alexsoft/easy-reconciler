@@ -31,17 +31,23 @@ export const invoices = pgTable('invoices', {
   updated_at: now(),
 });
 
-export const invoice_lines = pgTable('invoice_lines', {
-  id: text('id').primaryKey(),
-  invoice_id: text('invoice_id')
-    .notNull()
-    .references(() => invoices.id),
-  description: text('description').notNull(),
-  quantity: integer('quantity').notNull(),
-  unit_price: cents('unit_price'),
-  amount: cents('amount'),
-  tax_rate: numeric('tax_rate', { precision: 5, scale: 4 }).notNull(),
-});
+export const invoice_lines = pgTable(
+  'invoice_lines',
+  {
+    id: text('id').primaryKey(),
+    invoice_id: text('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    description: text('description').notNull(),
+    quantity: integer('quantity').notNull(),
+    unit_price: cents('unit_price'),
+    amount: cents('amount'),
+    tax_rate: numeric('tax_rate', { precision: 5, scale: 4 }).notNull(),
+  },
+  (t) => ({
+    invoiceIdx: index('invoice_lines_invoice_idx').on(t.invoice_id),
+  }),
+);
 
 export const transactions = pgTable(
   'transactions',
@@ -87,6 +93,7 @@ export const allocations = pgTable(
       .on(t.transaction_id, t.invoice_id)
       .where(sql`invoice_id is not null`),
     txIdx: index('allocations_tx_idx').on(t.transaction_id),
+    invIdx: index('allocations_invoice_idx').on(t.invoice_id),
   }),
 );
 
