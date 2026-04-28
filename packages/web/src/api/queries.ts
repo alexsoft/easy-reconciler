@@ -111,10 +111,3 @@ export function useMarkUnrelated(txId: string) {
   });
 }
 
-export function useRunMatcher() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.post('/api/matcher/run', {}),
-    onSuccess: () => qc.invalidateQueries(),
-  });
-}
