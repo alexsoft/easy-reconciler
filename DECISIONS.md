@@ -1,12 +1,12 @@
 # Decisions
 
-## Integer cents for all money columns
+## Bigint cents for all money columns
 
-Postgres `numeric` comes back as a string in the `pg` driver. Representing money as integer cents avoids pulling in `decimal.js` or similar and eliminates floating-point rounding entirely. Every amount in the fixture fits comfortably inside JS safe-integer range, so no precision is lost.
+Postgres `numeric` comes back as a string in the `pg` driver. Representing money as whole-number cents (stored as `bigint`, returned as JS `number` via Drizzle's `mode: 'number'`) avoids pulling in `decimal.js` or similar and eliminates floating-point rounding entirely. Every amount in the fixture fits comfortably inside JS safe-integer range, so no precision is lost.
 
 ## Matcher invariant: only touch `proposed` rows
 
-The matcher inserts new allocation rows freely on each run. It only modifies existing rows when their status is `proposed`. Rows the reviewer has moved to `confirmed` or `rejected` are left untouched. This means reviewer decisions survive re-runs of the pipeline — idempotent reruns do not churn confirmed allocations.
+The matcher inserts new allocation rows freely on each run. When inserting, the status depends on confidence: high-confidence matches go directly to `confirmed` (the `auto_confirm` bucket); lower-confidence matches are inserted as `proposed` for reviewer approval. The matcher only modifies existing rows when their status is `proposed`. Rows the reviewer has moved to `confirmed` or `rejected` are left untouched. This means reviewer decisions survive re-runs of the pipeline — idempotent reruns do not churn confirmed allocations.
 
 ## Optimistic locking on `transactions` only
 
