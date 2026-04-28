@@ -97,27 +97,39 @@ export const allocations = pgTable(
   }),
 );
 
-export const payout_batches = pgTable('payout_batches', {
-  id: text('id').primaryKey(),
-  transaction_id: text('transaction_id').references(() => transactions.id),
-  gross_total: cents('gross_total'),
-  fee_total: cents('fee_total'),
-  net_total: cents('net_total'),
-  status: text('status').notNull().default('needs_review'),
-});
+export const payout_batches = pgTable(
+  'payout_batches',
+  {
+    id: text('id').primaryKey(),
+    transaction_id: text('transaction_id').references(() => transactions.id),
+    gross_total: cents('gross_total'),
+    fee_total: cents('fee_total'),
+    net_total: cents('net_total'),
+    status: text('status').notNull().default('needs_review'),
+  },
+  (t) => ({
+    txIdx: index('payout_batches_tx_idx').on(t.transaction_id),
+  }),
+);
 
-export const payout_items = pgTable('payout_items', {
-  id: text('id').primaryKey(),
-  payout_batch_id: text('payout_batch_id')
-    .notNull()
-    .references(() => payout_batches.id),
-  invoice_id: text('invoice_id').references(() => invoices.id),
-  customer_name: text('customer_name').notNull(),
-  gross_amount: cents('gross_amount'),
-  fee: cents('fee'),
-  net_amount: cents('net_amount'),
-  type: text('type').notNull(),
-});
+export const payout_items = pgTable(
+  'payout_items',
+  {
+    id: text('id').primaryKey(),
+    payout_batch_id: text('payout_batch_id')
+      .notNull()
+      .references(() => payout_batches.id),
+    invoice_id: text('invoice_id').references(() => invoices.id),
+    customer_name: text('customer_name').notNull(),
+    gross_amount: cents('gross_amount'),
+    fee: cents('fee'),
+    net_amount: cents('net_amount'),
+    type: text('type').notNull(),
+  },
+  (t) => ({
+    invoiceIdx: index('payout_items_invoice_idx').on(t.invoice_id),
+  }),
+);
 
 export const audit_log = pgTable(
   'audit_log',
