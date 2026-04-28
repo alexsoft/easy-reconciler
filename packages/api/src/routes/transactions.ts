@@ -79,8 +79,8 @@ export async function transactionRoutes(app: FastifyInstance) {
         .where(and(eq(transactions.id, req.params.id), eq(transactions.version, body.version)))
         .returning();
       if (updated.length === 0) {
-        const cur = (await tx.select().from(transactions).where(eq(transactions.id, req.params.id)))[0];
-        return reply.code(409).send({ error: 'version_conflict', current: cur });
+        const cur = (await tx.select({ version: transactions.version }).from(transactions).where(eq(transactions.id, req.params.id)))[0];
+        return reply.code(409).send({ error: 'version_conflict', version: cur?.version });
       }
       await recordAudit(tx, {
         entity_type: 'transaction',
@@ -102,7 +102,8 @@ export async function transactionRoutes(app: FastifyInstance) {
         .where(and(eq(transactions.id, req.params.id), eq(transactions.version, body.version)))
         .returning();
       if (updated.length === 0) {
-        return reply.code(409).send({ error: 'version_conflict' });
+        const cur = (await tx.select({ version: transactions.version }).from(transactions).where(eq(transactions.id, req.params.id)))[0];
+        return reply.code(409).send({ error: 'version_conflict', version: cur?.version });
       }
       await recordAudit(tx, {
         entity_type: 'transaction',
