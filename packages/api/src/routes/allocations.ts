@@ -11,7 +11,7 @@ const Body = z.object({
   allocations: z.array(
     z.object({
       invoice_id: z.string(),
-      amount: z.number().int(),
+      amount: z.number().int().positive(),
     }),
   ),
 });
