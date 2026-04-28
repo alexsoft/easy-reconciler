@@ -38,6 +38,7 @@ export function useStats() {
   return useQuery({
     queryKey: keys.stats(),
     queryFn: () => api.get<Record<string, number>>('/api/transactions/stats'),
+    staleTime: 10_000,
   });
 }
 
@@ -46,6 +47,7 @@ export function useAudit(id: string | null) {
     queryKey: keys.audit(id!),
     enabled: !!id,
     queryFn: () => api.get<AuditEvent[]>(`/api/audit?entity_id=${id}`),
+    staleTime: 10_000,
   });
 }
 
