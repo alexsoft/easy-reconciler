@@ -8,7 +8,9 @@ import { recordAudit } from '../../db/audit.js';
 export async function runR7PayoutLink(db: DB, cfg: MatcherConfig, fired: (rule: string) => void): Promise<void> {
   const unlinked = await db.select().from(payout_batches).where(isNull(payout_batches.transaction_id));
   for (const batch of unlinked) {
-    if (batch.net_total == null) continue;
+    if (batch.net_total == null) {
+      continue;
+    }
     const candidates = await db
       .select()
       .from(transactions)
@@ -17,7 +19,9 @@ export async function runR7PayoutLink(db: DB, cfg: MatcherConfig, fired: (rule: 
       const blob = `${t.counterparty_name} ${t.description}`.toLowerCase();
       return blob.includes('payout') || blob.includes('stripe');
     });
-    if (!winner) continue;
+    if (!winner) {
+      continue;
+    }
 
     await db.update(payout_batches).set({ transaction_id: winner.id }).where(eq(payout_batches.id, batch.id));
     await db
@@ -34,9 +38,13 @@ export async function runR7PayoutLink(db: DB, cfg: MatcherConfig, fired: (rule: 
 
     const items = await db.select().from(payout_items).where(eq(payout_items.payout_batch_id, batch.id));
     for (const item of items) {
-      if (item.type !== 'charge' || !item.invoice_id) continue;
+      if (item.type !== 'charge' || !item.invoice_id) {
+        continue;
+      }
       const inv = (await db.select().from(invoices).where(eq(invoices.id, item.invoice_id)).limit(1))[0];
-      if (!inv) continue;
+      if (!inv) {
+        continue;
+      }
       const id = cuid();
       await db
         .insert(allocations)

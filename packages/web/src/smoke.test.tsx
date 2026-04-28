@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Workspace } from './pages/Workspace.js';
 
 const fetchMock = vi.fn(async (url: string) => {
-  if (url.includes('/stats')) return new Response(JSON.stringify({ needs_review: 1 }));
-  if (url.includes('/transactions?'))
+  if (url.includes('/stats')) {
+    return new Response(JSON.stringify({ needs_review: 1 }));
+  }
+  if (url.includes('/transactions?')) {
     return new Response(
       JSON.stringify([
         {
@@ -21,6 +23,7 @@ const fetchMock = vi.fn(async (url: string) => {
         },
       ]),
     );
+  }
   return new Response('[]');
 });
 vi.stubGlobal('fetch', fetchMock);

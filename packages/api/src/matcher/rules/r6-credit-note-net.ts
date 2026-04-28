@@ -8,7 +8,9 @@ export async function runR6CreditNoteNet(db: DB, cfg: MatcherConfig, fired: (rul
   const creditNotes = await db.select().from(invoices).where(eq(invoices.type, 'credit_note'));
   for (const cn of creditNotes) {
     const cnBalance = await invoiceBalance(db, cn.id);
-    if (cnBalance <= 0) continue;
+    if (cnBalance <= 0) {
+      continue;
+    }
     fired('credit_note_net_skipped');
   }
 }

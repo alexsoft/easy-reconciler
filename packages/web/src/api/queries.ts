@@ -15,8 +15,12 @@ export function useTransactions(filter: { status?: string; search?: string }) {
     queryKey: keys.txs(filter),
     queryFn: () => {
       const p = new URLSearchParams();
-      if (filter.status) p.set('status', filter.status);
-      if (filter.search) p.set('search', filter.search);
+      if (filter.status) {
+        p.set('status', filter.status);
+      }
+      if (filter.search) {
+        p.set('search', filter.search);
+      }
       return api.get<TransactionListItem[]>(`/api/transactions?${p}`);
     },
   });
@@ -50,8 +54,12 @@ export function useInvoices(q: { customer_id?: string; search?: string }) {
     queryKey: keys.invoices(q),
     queryFn: () => {
       const p = new URLSearchParams();
-      if (q.customer_id) p.set('customer_id', q.customer_id);
-      if (q.search) p.set('search', q.search);
+      if (q.customer_id) {
+        p.set('customer_id', q.customer_id);
+      }
+      if (q.search) {
+        p.set('search', q.search);
+      }
       return api.get<InvoiceListItem[]>(`/api/invoices?${p}`);
     },
   });

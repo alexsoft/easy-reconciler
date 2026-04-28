@@ -97,7 +97,9 @@ async function seedPayout() {
   const rows = parseCsv(raw, { columns: true, skip_empty_lines: true }) as Array<Record<string, string>>;
 
   const totalRow = rows.find((r) => r.type === 'payout');
-  if (!totalRow) throw new Error('payout total row missing');
+  if (!totalRow) {
+    throw new Error('payout total row missing');
+  }
 
   const charges = rows.filter((r) => r.type === 'charge');
   const refunds = rows.filter((r) => r.type === 'refund');

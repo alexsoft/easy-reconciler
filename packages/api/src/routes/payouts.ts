@@ -17,18 +17,24 @@ export async function payoutRoutes(app: FastifyInstance) {
       const body = Body.parse(req.body);
       return db.transaction(async (tx) => {
         const batch = (await tx.select().from(payout_batches).where(eq(payout_batches.id, req.params.id)).limit(1))[0];
-        if (!batch?.transaction_id) return reply.code(400).send({ error: 'batch_not_linked' });
+        if (!batch?.transaction_id) {
+          return reply.code(400).send({ error: 'batch_not_linked' });
+        }
         const updated = await tx
           .update(transactions)
           .set({ version: sql`version + 1`, updated_at: sql`now()` })
           .where(and(eq(transactions.id, batch.transaction_id), eq(transactions.version, body.version)))
           .returning();
-        if (updated.length === 0) return reply.code(409).send({ error: 'version_conflict' });
+        if (updated.length === 0) {
+          return reply.code(409).send({ error: 'version_conflict' });
+        }
 
         const items = await tx.select().from(payout_items).where(eq(payout_items.payout_batch_id, batch.id));
         const accepted = new Set(body.accepted_item_ids);
         for (const item of items) {
-          if (item.type !== 'charge' || !item.invoice_id) continue;
+          if (item.type !== 'charge' || !item.invoice_id) {
+            continue;
+          }
           const allocs = await tx
             .select()
             .from(allocations)
@@ -40,7 +46,9 @@ export async function payoutRoutes(app: FastifyInstance) {
               ),
             );
           const existing = allocs[0];
-          if (!existing) continue;
+          if (!existing) {
+            continue;
+          }
           if (accepted.has(item.id)) {
             await tx
               .update(allocations)

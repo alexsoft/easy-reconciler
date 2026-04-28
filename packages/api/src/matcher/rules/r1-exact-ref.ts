@@ -16,11 +16,17 @@ export async function runR1ExactRef(db: DB, cfg: MatcherConfig, fired: RuleHook)
   for (const tx of txs) {
     const ref = tx.structured_reference!;
     const inv = (await db.select().from(invoices).where(eq(invoices.id, ref)).limit(1))[0];
-    if (!inv) continue;
-    if (inv.currency !== tx.currency) continue;
+    if (!inv) {
+      continue;
+    }
+    if (inv.currency !== tx.currency) {
+      continue;
+    }
 
     const balance = await invoiceBalance(db, inv.id);
-    if (balance <= 0) continue;
+    if (balance <= 0) {
+      continue;
+    }
 
     const allocAmount = Math.min(tx.amount, balance);
     const overpaymentAbs = tx.amount - balance;

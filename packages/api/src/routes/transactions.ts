@@ -19,7 +19,9 @@ export async function transactionRoutes(app: FastifyInstance) {
       .parse(req.query);
 
     const filters: SQL[] = [];
-    if (q.status && q.status !== 'all') filters.push(eq(transactions.status, q.status));
+    if (q.status && q.status !== 'all') {
+      filters.push(eq(transactions.status, q.status));
+    }
     if (q.search) {
       const like = `%${q.search}%`;
       filters.push(
@@ -47,13 +49,17 @@ export async function transactionRoutes(app: FastifyInstance) {
       .from(transactions)
       .groupBy(transactions.status);
     const out: Record<string, number> = {};
-    for (const r of rows) out[r.status] = Number(r.count);
+    for (const r of rows) {
+      out[r.status] = Number(r.count);
+    }
     return out;
   });
 
   app.get<{ Params: { id: string } }>('/api/transactions/:id', async (req, reply) => {
     const tx = (await db.select().from(transactions).where(eq(transactions.id, req.params.id)).limit(1))[0];
-    if (!tx) return reply.code(404).send({ error: 'not_found' });
+    if (!tx) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
     const allocs = await db.select().from(allocations).where(eq(allocations.transaction_id, tx.id));
     return {
       ...tx,
@@ -95,7 +101,9 @@ export async function transactionRoutes(app: FastifyInstance) {
         .set({ status: 'unmatched', version: sql`version + 1`, updated_at: sql`now()` })
         .where(and(eq(transactions.id, req.params.id), eq(transactions.version, body.version)))
         .returning();
-      if (updated.length === 0) return reply.code(409).send({ error: 'version_conflict' });
+      if (updated.length === 0) {
+        return reply.code(409).send({ error: 'version_conflict' });
+      }
       await recordAudit(tx, {
         entity_type: 'transaction',
         entity_id: req.params.id,

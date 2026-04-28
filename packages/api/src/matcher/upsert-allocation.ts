@@ -35,7 +35,9 @@ export async function upsertProposed(db: DB, input: UpsertInput): Promise<Upsert
 
   if (existing.length > 0) {
     const row = existing[0]!;
-    if (row.status !== 'proposed') return { action: 'skipped_non_proposed', allocation_id: row.id };
+    if (row.status !== 'proposed') {
+      return { action: 'skipped_non_proposed', allocation_id: row.id };
+    }
 
     const sameAmount = row.amount === input.amount;
     const sameConf = Number(row.confidence) === input.confidence;

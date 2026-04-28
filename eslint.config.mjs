@@ -46,4 +46,7 @@ export default tseslint.config(
 
   // Prettier last — disables ESLint rules that conflict with Prettier formatting
   prettierConfig,
+
+  // Re-assert after prettierConfig (which disables curly: all due to potential conflicts)
+  { rules: { curly: ['error', 'all'] } },
 );

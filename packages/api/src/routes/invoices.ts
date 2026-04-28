@@ -15,8 +15,12 @@ export async function invoiceRoutes(app: FastifyInstance) {
       .parse(req.query);
 
     const filters: SQL[] = [];
-    if (q.customer_id) filters.push(eq(invoices.customer_id, q.customer_id));
-    if (!q.include_credit_notes) filters.push(eq(invoices.type, 'invoice'));
+    if (q.customer_id) {
+      filters.push(eq(invoices.customer_id, q.customer_id));
+    }
+    if (!q.include_credit_notes) {
+      filters.push(eq(invoices.type, 'invoice'));
+    }
     if (q.search) {
       const like = `%${q.search}%`;
       filters.push(or(ilike(invoices.id, like), ilike(invoices.customer_name, like))!);

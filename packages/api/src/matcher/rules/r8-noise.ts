@@ -11,13 +11,17 @@ export async function runR8Noise(db: DB, cfg: MatcherConfig, fired: (rule: strin
     const hit = cfg.noiseKeywords.some((kw) => haystack.includes(kw.toLowerCase()));
     const isNegativeOrphan = tx.amount < 0;
 
-    if (!hit && !isNegativeOrphan) continue;
+    if (!hit && !isNegativeOrphan) {
+      continue;
+    }
 
     const existing = await db
       .select({ c: sql<string>`count(*)` })
       .from(allocations)
       .where(eq(allocations.transaction_id, tx.id));
-    if (Number(existing[0]?.c ?? 0) > 0) continue;
+    if (Number(existing[0]?.c ?? 0) > 0) {
+      continue;
+    }
 
     await db
       .update(transactions)

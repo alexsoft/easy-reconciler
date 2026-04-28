@@ -7,8 +7,12 @@ import { ActionBar } from './ActionBar.js';
 
 export function TransactionDetail({ id }: { id: string }) {
   const tx = useTransaction(id);
-  if (tx.isLoading) return <div className="p-4 text-sm">loading…</div>;
-  if (!tx.data) return <div className="p-4 text-sm text-red-600">not found</div>;
+  if (tx.isLoading) {
+    return <div className="p-4 text-sm">loading…</div>;
+  }
+  if (!tx.data) {
+    return <div className="p-4 text-sm text-red-600">not found</div>;
+  }
   const t = tx.data;
   return (
     <div className="h-full overflow-auto p-4 space-y-4">

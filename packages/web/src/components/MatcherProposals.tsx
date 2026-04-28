@@ -5,7 +5,9 @@ import type { TransactionDetail } from '../api/types.js';
 export function MatcherProposals({ tx }: { tx: TransactionDetail }) {
   const accept = useAcceptProposal(tx.id);
   const reject = useRejectProposal(tx.id);
-  if (tx.proposals.length === 0) return null;
+  if (tx.proposals.length === 0) {
+    return null;
+  }
   return (
     <div className="space-y-1">
       <h3 className="font-semibold">Matcher proposals</h3>

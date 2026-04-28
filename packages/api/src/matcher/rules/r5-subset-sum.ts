@@ -20,23 +20,33 @@ function findSingleSubset(
   maxInvoices: number,
   maxCandidates: number,
 ): Subset | null {
-  if (candidates.length > maxCandidates) candidates = candidates.slice(0, maxCandidates);
+  if (candidates.length > maxCandidates) {
+    candidates = candidates.slice(0, maxCandidates);
+  }
   let found: Subset | null = null;
   let foundCount = 0;
   function recurse(start: number, picked: typeof candidates, sum: number) {
-    if (foundCount > 1) return;
+    if (foundCount > 1) {
+      return;
+    }
     if (Math.abs(sum - target) <= tolerance && picked.length > 0) {
       found = { invoices: picked.slice(), sum };
       foundCount++;
       return;
     }
-    if (picked.length >= maxInvoices) return;
-    if (sum > target + tolerance) return;
+    if (picked.length >= maxInvoices) {
+      return;
+    }
+    if (sum > target + tolerance) {
+      return;
+    }
     for (let i = start; i < candidates.length; i++) {
       picked.push(candidates[i]!);
       recurse(i + 1, picked, sum + candidates[i]!.balance);
       picked.pop();
-      if (foundCount > 1) return;
+      if (foundCount > 1) {
+        return;
+      }
     }
   }
   recurse(0, [], 0);
@@ -45,19 +55,25 @@ function findSingleSubset(
 
 export async function runR5SubsetSum(db: DB, cfg: MatcherConfig, fired: (rule: string) => void): Promise<void> {
   const txs = await db.select().from(transactions).where(eq(transactions.status, 'unmatched'));
-  if (txs.length === 0) return;
+  if (txs.length === 0) {
+    return;
+  }
   const allInv = await db.select().from(invoices);
   const normInv = allInv.map((i) => ({ inv: i, norm: normalizeCustomerName(i.customer_name) }));
 
   for (const tx of txs) {
     const txNorm = normalizeCustomerName(tx.counterparty_name);
-    if (!txNorm) continue;
+    if (!txNorm) {
+      continue;
+    }
     const customers = new Set(
       normInv
         .filter(({ norm }) => jaroWinkler(txNorm, norm) >= cfg.customerName.jaroWinklerThreshold)
         .map(({ inv }) => inv.customer_id),
     );
-    if (customers.size === 0) continue;
+    if (customers.size === 0) {
+      continue;
+    }
 
     let chosen: Subset | null = null;
     for (const cust of customers) {
@@ -75,7 +91,9 @@ export async function runR5SubsetSum(db: DB, cfg: MatcherConfig, fired: (rule: s
         break;
       }
     }
-    if (!chosen) continue;
+    if (!chosen) {
+      continue;
+    }
 
     const correlation = cuid();
     for (const inv of chosen.invoices) {

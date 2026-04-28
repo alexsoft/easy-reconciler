@@ -8,7 +8,9 @@ export function ActionBar({ tx }: { tx: TransactionDetail }) {
     <div className="flex gap-2">
       <button
         onClick={() => {
-          if (confirm('Mark as unrelated?')) mark.mutate({ version: tx.version });
+          if (confirm('Mark as unrelated?')) {
+            mark.mutate({ version: tx.version });
+          }
         }}
         className="px-3 py-1 border rounded text-sm"
       >

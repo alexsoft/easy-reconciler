@@ -22,9 +22,13 @@ export async function proposalsRoutes(app: FastifyInstance) {
     const body = Body.parse(req.body);
     return db.transaction(async (tx) => {
       const prop = (await tx.select().from(allocations).where(eq(allocations.id, req.params.id)).limit(1))[0];
-      if (!prop || prop.status !== 'proposed') return reply.code(404).send({ error: 'not_proposed' });
+      if (!prop || prop.status !== 'proposed') {
+        return reply.code(404).send({ error: 'not_proposed' });
+      }
       const txRow = await bumpAndCheck(tx, prop.transaction_id, body.version);
-      if (!txRow) return reply.code(409).send({ error: 'version_conflict' });
+      if (!txRow) {
+        return reply.code(409).send({ error: 'version_conflict' });
+      }
       await tx.update(allocations).set({ status: 'confirmed', source: 'manual' }).where(eq(allocations.id, prop.id));
       await recordAudit(tx, {
         entity_type: 'allocation',
@@ -42,9 +46,13 @@ export async function proposalsRoutes(app: FastifyInstance) {
     const body = Body.parse(req.body);
     return db.transaction(async (tx) => {
       const prop = (await tx.select().from(allocations).where(eq(allocations.id, req.params.id)).limit(1))[0];
-      if (!prop || prop.status !== 'proposed') return reply.code(404).send({ error: 'not_proposed' });
+      if (!prop || prop.status !== 'proposed') {
+        return reply.code(404).send({ error: 'not_proposed' });
+      }
       const txRow = await bumpAndCheck(tx, prop.transaction_id, body.version);
-      if (!txRow) return reply.code(409).send({ error: 'version_conflict' });
+      if (!txRow) {
+        return reply.code(409).send({ error: 'version_conflict' });
+      }
       await tx.update(allocations).set({ status: 'rejected' }).where(eq(allocations.id, prop.id));
       await recordAudit(tx, {
         entity_type: 'allocation',

@@ -26,7 +26,9 @@ export function TransactionList({
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
-    if (search.length === 1) return;
+    if (search.length === 1) {
+      return;
+    }
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);

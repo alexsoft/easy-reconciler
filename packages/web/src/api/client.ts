@@ -14,7 +14,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
   });
-  if (!r.ok) throw new ApiError(r.status, await r.json().catch(() => ({})));
+  if (!r.ok) {
+    throw new ApiError(r.status, await r.json().catch(() => ({})));
+  }
   return r.json() as Promise<T>;
 }
 

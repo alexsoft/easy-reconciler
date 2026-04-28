@@ -10,7 +10,9 @@ import { withinTolerance } from '../score.js';
 
 export async function runR3FuzzyRef(db: DB, cfg: MatcherConfig, fired: (rule: string) => void): Promise<void> {
   const txs = await db.select().from(transactions).where(eq(transactions.status, 'unmatched'));
-  if (txs.length === 0) return;
+  if (txs.length === 0) {
+    return;
+  }
   const allInv = await db.select().from(invoices);
   const normInv = allInv.map((i) => ({ inv: i, norm: normalizeRef(i.id) }));
 
@@ -27,15 +29,22 @@ export async function runR3FuzzyRef(db: DB, cfg: MatcherConfig, fired: (rule: st
         }
       }
     }
-    if (!best) continue;
-    if (best.inv.currency !== tx.currency) continue;
+    if (!best) {
+      continue;
+    }
+    if (best.inv.currency !== tx.currency) {
+      continue;
+    }
     const balance = await invoiceBalance(db, best.inv.id);
-    if (balance <= 0) continue;
+    if (balance <= 0) {
+      continue;
+    }
     if (
       !withinTolerance(tx.amount, balance, cfg.amountToleranceCents) &&
       tx.amount > balance + cfg.overpayment.absThresholdCents
-    )
+    ) {
       continue;
+    }
     await upsertProposed(db, {
       transaction_id: tx.id,
       invoice_id: best.inv.id,

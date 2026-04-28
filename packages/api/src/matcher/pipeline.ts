@@ -47,7 +47,9 @@ export async function runMatcher(db: DB): Promise<MatcherReport> {
   await runR7PayoutLink(db, matcherConfig, fired);
   await runR8Noise(db, matcherConfig, fired);
 
-  for (const tx of txs) await recomputeTxStatus(db, tx.id);
+  for (const tx of txs) {
+    await recomputeTxStatus(db, tx.id);
+  }
 
   const stats = await db
     .select({

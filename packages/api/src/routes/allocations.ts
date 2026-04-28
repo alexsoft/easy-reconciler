@@ -39,7 +39,9 @@ export async function allocationsRoutes(app: FastifyInstance) {
         const after: unknown[] = [];
         for (const a of body.allocations) {
           const inv = (await tx.select().from(invoices).where(eq(invoices.id, a.invoice_id)).limit(1))[0];
-          if (!inv) return reply.code(400).send({ error: 'invoice_not_found', id: a.invoice_id });
+          if (!inv) {
+            return reply.code(400).send({ error: 'invoice_not_found', id: a.invoice_id });
+          }
           const id = cuid();
           const row = {
             id,
@@ -75,9 +77,13 @@ export async function allocationsRoutes(app: FastifyInstance) {
         const sum = Number(sumRow[0]?.sum ?? 0);
         const tx0 = updated[0]!;
         let status: string;
-        if (sum >= tx0.amount) status = 'auto_matched';
-        else if (sum > 0) status = 'partially_allocated';
-        else status = 'unmatched';
+        if (sum >= tx0.amount) {
+          status = 'auto_matched';
+        } else if (sum > 0) {
+          status = 'partially_allocated';
+        } else {
+          status = 'unmatched';
+        }
         await tx.update(transactions).set({ status }).where(eq(transactions.id, req.params.id));
 
         return { ok: true, version: tx0.version };
