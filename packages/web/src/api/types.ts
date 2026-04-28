@@ -1,6 +1,7 @@
 export type TxStatus =
   | 'unmatched'
   | 'auto_matched'
+  | 'manually_matched'
   | 'partially_allocated'
   | 'needs_review'
   | 'unrelated'
