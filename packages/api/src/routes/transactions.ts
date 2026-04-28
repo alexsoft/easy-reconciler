@@ -3,12 +3,11 @@ import { and, eq, ilike, or, sql, desc, type SQL } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { transactions, allocations } from '../db/schema.js';
 import { z } from 'zod';
+import { TxStatus } from '@reconciler/shared';
 import { recordAudit } from '../db/audit.js';
 import { getTxById } from '../repository/transactions.js';
 
-const StatusQuery = z
-  .enum(['unmatched', 'auto_matched', 'partially_allocated', 'needs_review', 'unrelated', 'payout_batch', 'all'])
-  .default('all');
+const StatusQuery = z.union([TxStatus, z.literal('all')]).default('all');
 
 export async function transactionRoutes(app: FastifyInstance) {
   app.get('/api/transactions', async (req) => {
