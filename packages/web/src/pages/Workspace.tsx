@@ -6,7 +6,7 @@ import { AuditLog } from '../components/AuditLog.js';
 export function Workspace() {
   const [sel, setSel] = useState<string | null>(null);
   return (
-    <div className="h-full grid" style={{ gridTemplateColumns: '35% 45% 20%' }}>
+    <div className="h-full grid" style={{ gridTemplateColumns: '35% 45% 20%', gridTemplateRows: '100%' }}>
       <TransactionList selectedId={sel} onSelect={setSel} />
       <div className="overflow-hidden">
         {sel ? <TransactionDetail id={sel} /> : <div className="p-6 text-gray-500">Select a transaction to review</div>}
