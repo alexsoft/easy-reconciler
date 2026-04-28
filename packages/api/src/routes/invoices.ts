@@ -9,7 +9,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     const q = z
       .object({
         customer_id: z.string().optional(),
-        search: z.string().optional(),
+        search: z.string().max(100).optional(),
         include_credit_notes: z.coerce.boolean().default(true),
       })
       .parse(req.query);

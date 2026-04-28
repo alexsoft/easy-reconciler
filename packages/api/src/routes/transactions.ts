@@ -14,7 +14,7 @@ export async function transactionRoutes(app: FastifyInstance) {
     const q = z
       .object({
         status: StatusQuery.optional(),
-        search: z.string().optional(),
+        search: z.string().max(100).optional(),
       })
       .parse(req.query);
 
