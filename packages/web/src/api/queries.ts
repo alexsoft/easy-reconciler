@@ -46,7 +46,7 @@ export function useAudit(id: string | null) {
   return useQuery({
     queryKey: keys.audit(id!),
     enabled: !!id,
-    queryFn: () => api.get<AuditEvent[]>(`/api/audit?entity_id=${id}`),
+    queryFn: () => api.get<AuditEvent[]>(`/api/audit?${new URLSearchParams({ entity_id: id! })}`),
     staleTime: 10_000,
   });
 }
