@@ -62,4 +62,4 @@ Full design spec: [`docs/superpowers/specs/2026-04-27-reconciler-design.md`](doc
 
 ## Walkthrough
 
-<!-- Add Loom URL here -->
+https://www.loom.com/share/a97387f46bde4c9f9cc2376968f839ee
