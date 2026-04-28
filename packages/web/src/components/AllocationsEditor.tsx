@@ -22,7 +22,7 @@ export function AllocationsEditor({ tx, customerId }: { tx: TransactionDetail; c
         .filter((a: AllocationDTO) => a.status === 'confirmed' && a.invoice_id)
         .map((a) => ({ invoice_id: a.invoice_id!, invoice_label: a.invoice_id!, amount: a.amount })),
     );
-  }, [tx.id, tx.version]);
+  }, [tx.id, tx.version, tx.allocations]);
 
   const sum = rows.reduce((s, r) => s + r.amount, 0);
   const remaining = tx.amount - sum;
