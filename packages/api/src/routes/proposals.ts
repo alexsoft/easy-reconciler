@@ -5,6 +5,7 @@ import { db } from '../db/client.js';
 import type { DB } from '../db/client.js';
 import { allocations, transactions } from '../db/schema.js';
 import { recordAudit } from '../db/audit.js';
+import { getAllocationById } from '../repository/allocations.js';
 
 const Body = z.object({ version: z.number().int() });
 
@@ -21,7 +22,7 @@ export async function proposalsRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string }; Body: { version: number } }>('/api/proposals/:id/accept', async (req, reply) => {
     const body = Body.parse(req.body);
     return db.transaction(async (tx) => {
-      const prop = (await tx.select().from(allocations).where(eq(allocations.id, req.params.id)).limit(1))[0];
+      const prop = await getAllocationById(tx, req.params.id);
       if (!prop || prop.status !== 'proposed') {
         return reply.code(404).send({ error: 'not_proposed' });
       }
@@ -45,7 +46,7 @@ export async function proposalsRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string }; Body: { version: number } }>('/api/proposals/:id/reject', async (req, reply) => {
     const body = Body.parse(req.body);
     return db.transaction(async (tx) => {
-      const prop = (await tx.select().from(allocations).where(eq(allocations.id, req.params.id)).limit(1))[0];
+      const prop = await getAllocationById(tx, req.params.id);
       if (!prop || prop.status !== 'proposed') {
         return reply.code(404).send({ error: 'not_proposed' });
       }

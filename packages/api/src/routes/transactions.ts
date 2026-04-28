@@ -4,6 +4,7 @@ import { db } from '../db/client.js';
 import { transactions, allocations } from '../db/schema.js';
 import { z } from 'zod';
 import { recordAudit } from '../db/audit.js';
+import { getTxById } from '../repository/transactions.js';
 
 const StatusQuery = z
   .enum(['unmatched', 'auto_matched', 'partially_allocated', 'needs_review', 'unrelated', 'payout_batch', 'all'])
@@ -56,7 +57,7 @@ export async function transactionRoutes(app: FastifyInstance) {
   });
 
   app.get<{ Params: { id: string } }>('/api/transactions/:id', async (req, reply) => {
-    const tx = (await db.select().from(transactions).where(eq(transactions.id, req.params.id)).limit(1))[0];
+    const tx = await getTxById(db, req.params.id);
     if (!tx) {
       return reply.code(404).send({ error: 'not_found' });
     }
