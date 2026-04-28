@@ -1,0 +1,1279 @@
+❯ /model
+  ⎿  Set model to Opus 4.7 with high effort
+
+❯ Task to be done is described in @task/task.md. related files are in directory
+   @task/. let's plan how to implement it in Fastify + Drizzle + Postgres +
+  React + TanStack Query stack. We will use docker compose for everything.
+  First part is to have baseline with db and script that can match by ids. then
+   next part of implementation is for handling some heuristics to handle
+  special cases. then last part of implementation will be UI for the matched
+  and not matched things
+  ⎿  Read task/task.md (87 lines)
+  ⎿  Listed directory task/
+
+⏺ Skill(superpowers:brainstorming)
+  ⎿  Successfully loaded skill
+
+⏺ I'll follow the brainstorming process. Let me first peek at the data files to
+  ground the design in reality, then ask clarifying questions one at a time.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ I've got the lay of the land: 52 invoices/credit notes, 80 transactions, a
+  small payout CSV (5 charges + 1 refund + 1 chargeback + payout total). The
+  data is small enough that we can be opinionated. Let me create a checklist and
+   ask my first clarifying question.
+⏺ Here's my first clarifying question — it shapes the whole project size.
+
+  Q1 — LLM in the matcher: yes or no?
+
+  The task says "if you used an LLM anywhere in the matcher, show
+  precision/recall." This is a real fork in the road:
+
+  - (A) No LLM in the matcher — purely deterministic heuristics (exact ref match
+   → fuzzy ref match → name+amount+date window → multi-invoice subset-sum for
+  consolidated payments → credit-note netting). Fast, cheap, easy to test,
+  idempotent by construction. No EVAL.md beyond a few asserted-truth fixtures.
+  - (B) LLM only as a fallback — deterministic rules first; LLM only on the
+  residual "garbled reference / weird description" cases to suggest a candidate
+  invoice from a shortlist. Requires a small labeled eval set (~20 cases) for
+  precision/recall.
+  - (C) LLM-first / LLM-heavy — model decides the match. Most flexible, hardest
+  to make idempotent and fastest to ship a demo of, but riskiest under the 4–6h
+  budget and most evaluation work.
+
+  Given the budget and that the data has lots of clean structured references, my
+   recommendation is (B): deterministic core + LLM only on the garbled-reference
+   / freeform-description residual, with a small labeled eval. Shows AI
+  proficiency and engineering rigor (the two things they're scoring).
+
+  Which direction do you want — A, B, or C?
+
+✻ Brewed for 1m 2s
+
+❯ A
+
+⏺ Good — that simplifies a lot (no EVAL.md needed beyond fixture-based
+  assertions; AI use stays in AI-WORKFLOW.md/PROMPTS.md as a development tool,
+  not a runtime dependency).
+
+  Q2 — Edge case scope: which to handle, which to explicitly defer?
+
+  The task lists 10 cases and invites documented deferrals. With 4–6h, you can't
+   do all 10 well. Here's a triage proposal — let me know if you want to move
+  things between buckets.
+
+  Tier 1 — fully handled (bread-and-butter, clearly in the data):
+  1. Exact reference match (TXN-0001..0005 style)
+  2. Fuzzy reference match (garbled refs, e.g. INITECHLUXEMBOURGSARL style)
+  3. Partial payments (allocation < invoice total → invoice stays "partially
+  paid")
+  4. Over/underpayment (small tolerance auto, large goes to review)
+  5. Credit-note netting (apply credit note against an open invoice)
+  6. Consolidated payments (one txn = sum of N invoices for same customer;
+  bounded subset-sum)
+  7. Duplicate re-imports (idempotency by (date, amount, counterparty,
+  description) hash)
+  8. Unrelated noise (salary/rent/fees → auto-classified "non-AR", no match
+  attempted)
+
+  Tier 2 — partial handling (parsed but routed to review):
+  9. Stripe-style payouts — parse payout_report.csv, link the one payout
+  transaction in transactions.json to a virtual "payout batch" that contains the
+   per-charge allocations, fees, refund, chargeback. Surfaced in UI but reviewer
+   confirms.
+  10. Prepayments (txn arrives before invoice issue date) — flagged but not
+  auto-matched; reviewer attaches once invoice exists.
+
+  Tier 3 — explicitly deferred (documented in DECISIONS.md):
+  - True FX drift (multi-currency conversion). The data is EUR-only as far as I
+  saw — defer with "no multi-currency txns observed in fixture, would need an FX
+   rate source."
+
+  Does this triage match what you want, or do you want to push something up/down
+   a tier?
+
+※ recap: We're brainstorming the design for an invoice/transaction reconciler in Fastify+Drizzle+Postgres+React (Docker), deterministic matcher, no LLM. Next: you confirm or adjust the proposed edge-case triage (Tier 1/2/3) so we can move on. (disable recaps in /config)
+
+❯ I don't understand the tiers, why such separation is done. what do those
+  tiers mean?
+
+⏺ Fair — the tier names were too abstract. They map to what the system does at
+  runtime when it encounters that case:
+
+  - Tier 1 — "auto-close": matcher produces a high-confidence allocation and
+  writes it to the DB without human input. Reviewer never sees it unless they go
+   looking. This is where most of the 80 transactions should land.
+  - Tier 2 — "parse, but always route to review": the system understands the
+  case (extracts the payout charges, flags the prepayment) but deliberately does
+   NOT auto-close. It builds the structured proposal and puts it in the review
+  queue for a human to confirm with one click. Less risky than auto-closing,
+  more useful than ignoring.
+  - Tier 3 — "deferred": the system does not handle this at all. We write a
+  paragraph in DECISIONS.md saying "we noticed this case exists in real life,
+  here's what we'd do, but it's out of scope for this submission." No code, no
+  UI.
+
+  So the tiers are really three different runtime behaviors: auto-close vs.
+  assisted-review vs. not-implemented.
+
+  The reason for the split is the scoring rubric — "accounting judgment" rewards
+   recognizing that some cases (payouts, prepayments) are too ambiguous to
+  safely auto-close even if you can parse them. Auto-closing a payout against
+  the wrong invoices is worse than leaving it for review.
+
+  Does that framing make sense? And with that explanation, do you want to keep
+  my triage as-is, or move things?
+
+❯ then those tiers make sense
+
+⏺ Q3 — Match/allocation data model: one table or two?
+
+  This is the schema decision that everything else hangs off. Three options:
+
+  (A) Single allocations table. One row per (transaction, invoice) link with
+  amount, confidence, status (proposed / confirmed / rejected), source (auto /
+  manual), created_by. Re-running the matcher updates rows in place keyed on
+  (txn_id, invoice_id). Simple. Audit log is a separate append-only table that
+  records every status transition.
+
+  (B) Two tables: match_proposals (matcher output, ephemeral) + allocations
+  (confirmed truth). The matcher writes proposals; reviewer actions promote a
+  proposal into an allocation. Cleaner separation — proposals can be wiped and
+  recomputed without touching truth — but you maintain two schemas and reconcile
+   between them.
+
+  (C) Single allocations table + a separate transaction_matches view for the
+  matcher's working set. Hybrid: same as (A) but the matcher reads/writes
+  through a thin abstraction so you could swap proposal storage later.
+
+  My recommendation is (A) — for a 4–6h scope it gives you idempotency (upsert
+  by (txn_id, invoice_id)), a clean audit trail, and avoids the two-table sync
+  problem. The status field already encodes the proposed-vs-confirmed
+  distinction (B) is reaching for. The downside — that re-running the matcher
+  could overwrite a human-confirmed allocation — is solved by the rule "matcher
+  only touches rows where status = 'proposed'."
+
+  A, B, or C?
+
+❯ A
+
+⏺ Q4 — Data ingestion: seed-on-boot, or upload UI?
+
+  The task requires "one command to run." Two natural ways to get the fixture
+  data into Postgres:
+
+  (A) Seed on boot. A pnpm seed (or auto-run on first boot) that reads
+  task/invoices.json, task/transactions.json, task/payout_report.csv and inserts
+   them. Re-running is idempotent (upsert by source id). No UI for ingestion.
+  Simplest, fastest path; reviewer just opens the app and the data is there.
+
+  (B) Upload UI + seed as fallback. Same seed exists, but the UI also has an
+  "Import transactions" / "Import invoices" button that takes a JSON/CSV file.
+  More realistic product surface, more code (file parsing, schema validation,
+  error handling, dedup messaging in UI), and adds time you'd take from the
+  matcher / review UI.
+
+  Recommendation: (A) for the submission, with a one-paragraph note in
+  DECISIONS.md explaining that real-world ingestion (bank feed sync,
+  accounting-system pull) is the obvious follow-up but out of scope. The fixture
+   data is the spec, and a seed script is the most honest representation.
+
+  A or B?
+
+❯ A
+
+⏺ Q5 — Concurrent reviewers: handle in code, or document and defer?
+
+  The task rubric calls this out specifically ("do you think about concurrent
+  reviewers?"). Three options:
+
+  (A) Optimistic locking. Each transaction carries a version integer. Review
+  actions send the version they read; the API rejects with 409 if it changed. UI
+   shows "this transaction was updated by someone else, refresh." ~30 min of
+  work + one extra column.
+
+  (B) Document and defer. Single-user demo. DECISIONS.md says: "production would
+   use optimistic locking on transactions; out of scope for the prototype but
+  here's the schema sketch." Zero implementation cost.
+
+  (C) Pessimistic locking. API takes a row-level lock per transaction during a
+  review action. Heavy-handed for a prototype, fine for production with low
+  contention.
+
+  Recommendation: (A). It's cheap, demonstrates the awareness the rubric wants,
+  and stays honest (you actually return 409 in the UI). (B) reads like
+  hand-waving; (C) is overkill. The version column also doubles as a free
+  updated_at trigger for the audit log.
+
+  A, B, or C?
+
+❯ A
+
+⏺ Q6 — Review UI shape: single-page workspace, or list + detail pages?
+
+  Task says: split a transaction, allocate partial, attach credit note, mark
+  unrelated, with audit trail. Two natural shapes:
+
+  (A) Single-page workspace. Left: filterable transaction list (status chips:
+  auto-matched / needs review / unrelated / partially allocated). Right: detail
+  panel for the selected transaction showing matcher proposals, customer's open
+  invoices, an allocation editor (rows with amount + invoice picker, summing to
+  the txn amount), credit-note attach button, "mark unrelated" button, and a
+  collapsed audit-log strip at the bottom. Everything happens in one screen with
+   TanStack Query mutations + invalidations.
+
+  (B) List page + dedicated detail pages. Routes: /transactions,
+  /transactions/:id. Same actions, but split across navigations. Slightly more
+  "real app" feeling, slower to build, more places for bugs.
+
+  Recommendation: (A). For a 3–5 min Loom walkthrough you want everything
+  visible at once, and the workspace pattern matches how reviewers actually use
+  these tools (Stripe's dispute review, Pennylane's reconciliation screen,
+  etc.). Audit log stays inline so the demo can show "I made this change → it
+  appears in audit log → re-running matcher doesn't undo it."
+
+  A or B?
+
+※ recap: Planning a Fastify+Drizzle+Postgres+React reconciler for the EasyBiz take-home, currently brainstorming the design. Next action: you answer Q6 (review UI shape — single-page workspace A vs list+detail pages B). (disable recaps in /config)
+
+❯ A
+
+⏺ That's enough to design. Updating tasks and starting the design walkthrough.
+
+⏺ Design — section 1 of 5: Architecture & one-command boot
+
+  Stack (per task's "in-house bonus"): Fastify + Drizzle + Postgres 16 + React +
+   TanStack Query + Vite. TypeScript end to end. pnpm workspaces.
+
+  Repo layout:
+  easy-reconciler/
+    docker-compose.yml          # postgres + api + web
+    package.json                # root pnpm workspace
+    packages/
+      shared/                   # zod schemas + shared types (Invoice,
+  Transaction, Allocation…)
+      api/                      # Fastify app, Drizzle schema, matcher, seed
+  script
+        src/
+          db/{schema.ts,migrate.ts,seed.ts}
+          matcher/{pipeline.ts, rules/*.ts, score.ts}
+          routes/{transactions.ts, invoices.ts, allocations.ts, audit.ts,
+  matcher.ts}
+          server.ts
+      web/                      # React + Vite + TanStack Query + Tailwind
+        src/{App.tsx, pages/Workspace.tsx, components/*, api/client.ts}
+    task/                       # original fixtures, untouched
+
+  One-command boot: docker compose up. The api container's entrypoint runs
+  migrations, then idempotent seed (upserts from task/*.json,csv), then pnpm
+  --filter api start. Matcher runs once at the end of seed so the UI has data on
+   first load. Re-running docker compose up is safe (everything upserts).
+
+  Why this shape: monorepo lets shared/ host the zod schemas the API validates
+  against AND the types the web client consumes — one source of truth for
+  Invoice, Transaction, Allocation, etc. Drizzle gives type-safe queries without
+   an ORM tax. No auth, no users table — reviewer identity is a hardcoded
+  "reviewer" string in the audit log (real auth is out of scope, called out in
+  DECISIONS.md).
+
+  Out of scope (will be in DECISIONS.md): auth, multi-tenant, real bank-feed
+  sync, FX conversion, email/notifications.
+
+  OK to move to section 2 (data model)?
+
+❯ OK
+
+⏺ Design — section 2 of 5: Data model
+
+  All tables use id text PKs from source data where available, generated cuid
+  otherwise. Money stored as numeric(14,2). Timestamps timestamptz with default
+  now().
+
+  invoices
+  - id text PK (e.g. INV-2026-0001)
+  - type text — 'invoice' | 'credit_note'
+  - customer_id, customer_name, customer_vat text
+  - issue_date, due_date date
+  - currency text (3-char)
+  - subtotal, tax_total, total numeric(14,2)
+  - status text — derived view: 'open' | 'partially_paid' | 'paid' | 'overpaid'
+  (computed from allocations; stored as a generated column or recomputed in
+  queries — leaning toward recomputed in query for simplicity)
+  - created_at, updated_at
+
+  invoice_lines
+  - id text PK (INV-…-L1)
+  - invoice_id text FK
+  - description, quantity, unit_price, tax_rate, amount
+
+  transactions
+  - id text PK (TXN-0001)
+  - date date
+  - amount numeric(14,2)  (positive = inbound, negative = outbound — matches
+  source)
+  - currency text
+  - counterparty_name text
+  - structured_reference text nullable
+  - description text
+  - dedup_hash text — sha256(date|amount|counterparty_name|description), unique
+  index → guarantees re-import idempotency
+  - status text — 'unmatched' | 'auto_matched' | 'partially_allocated' |
+  'needs_review' | 'unrelated' | 'payout_batch'
+  - version int default 1 — optimistic-lock token
+  - created_at, updated_at
+
+  allocations (the heart of the system — single table per Q3)
+  - id cuid PK
+  - transaction_id text FK
+  - invoice_id text FK (or null when the row represents "marked unrelated" /
+  payout fee — see note)
+  - amount numeric(14,2) — signed; positive consumes invoice balance, negative
+  for credit-note netting
+  - confidence numeric(3,2) — 0.00–1.00
+  - status text — 'proposed' | 'confirmed' | 'rejected'
+  - source text — 'auto' | 'manual'
+  - rule text nullable — which matcher rule fired (exact_ref, fuzzy_ref,
+  subset_sum, …) — null for manual
+  - created_by text — 'matcher' or 'reviewer'
+  - created_at, updated_at
+  - Unique index on (transaction_id, invoice_id) where invoice_id is not null —
+  keeps matcher upserts idempotent
+  - Matcher invariant: matcher only ever inserts/updates rows with status =
+  'proposed'; once a row is confirmed or rejected, matcher leaves it alone.
+  (Enforced in matcher code, asserted in tests.)
+
+  audit_log (append-only)
+  - id cuid PK
+  - entity_type text — 'transaction' | 'allocation'
+  - entity_id text
+  - action text — 'matcher_proposed' | 'matcher_updated' | 'reviewer_confirmed'
+  | 'reviewer_rejected' | 'reviewer_split' | 'reviewer_marked_unrelated' |
+  'reviewer_attached_credit_note'
+  - actor text — 'matcher' | 'reviewer'
+  - before jsonb nullable, after jsonb nullable
+  - created_at
+
+  payout_batches (Tier 2 — payout report)
+  - id text PK (po_1NfK2r2026EasyBiz)
+  - transaction_id text FK — the one txn that funds the batch
+  - gross_total, fee_total, net_total numeric(14,2)
+  - status text — 'needs_review' | 'confirmed'
+
+  payout_items
+  - id text PK (ch_30NfK, rf_A1, …)
+  - payout_batch_id text FK
+  - invoice_id text FK nullable (refunds/chargebacks may not link)
+  - customer_name text
+  - gross_amount, fee, net_amount numeric(14,2)
+  - type text — 'charge' | 'refund' | 'chargeback'
+
+  Notes / non-obvious choices:
+  - "Marked unrelated" is not an allocation row — it's transactions.status =
+  'unrelated'. Allocations always represent value flowing to an invoice. Keeps
+  the table semantically clean.
+  - Credit-note netting is just an allocation with negative amount and
+  invoice_id pointing to the credit-note row (which has type = 'credit_note').
+  The matcher pairs a credit note with an open invoice for the same customer;
+  the UI can display both as a netted set.
+  - payout_batches exists because the single payout txn doesn't fit the (txn →
+  invoices) pattern cleanly — it's (txn → batch → many charges → many invoices).
+   One indirection is worth it.
+
+  OK to move to section 3 (matcher pipeline)?
+
+❯ shouldn't amount be in integer? stored in cents?
+
+⏺ You're right — cents is the right call. numeric(14,2) is exact in Postgres,
+  but the pg driver returns it as a string in JS to avoid float precision loss,
+  which means we'd be doing string→number conversions everywhere or carrying
+  decimal.js through the codebase. Integer cents sidesteps all of it: native JS
+  number is exact for integers up to 2^53, all our amounts fit comfortably,
+  comparisons and sums are trivial.
+
+  Amended:
+  - All money columns: bigint (Drizzle bigint('amount', { mode: 'number' }))
+  storing minor units (cents).
+  - Affects: invoices.{subtotal, tax_total, total}, invoice_lines.{unit_price,
+  amount}, transactions.amount, allocations.amount, payout_batches.{gross_total,
+   fee_total, net_total}, payout_items.{gross_amount, fee, net_amount}.
+  - invoice_lines.quantity and invoice_lines.tax_rate stay as-is — quantity is
+  integer, tax_rate is a small decimal we can store as numeric(5,4) (e.g.
+  0.1700) since it's a rate not money.
+  - Seed script multiplies source JSON values by 100 and rounds. Round-trip test
+   in seed: Math.round(value * 100) then assert reverse equals input to catch
+  any float weirdness in the fixture (none expected, EUR 2dp).
+  - Shared zod schema exposes amounts as number (cents) at the API boundary; the
+   React layer formats with Intl.NumberFormat('de-LU', { style: 'currency',
+  currency: 'EUR' }) for display only.
+
+  OK to move to section 3 (matcher pipeline)?
+
+❯ ok
+
+⏺ Design — section 3 of 5: Matcher pipeline
+
+  Shape: a pure function runMatcher(db) → MatcherReport that's idempotent. It
+  runs as the last step of seed, on demand via POST /api/matcher/run, and the
+  report is shown as a toast in the UI. Each rule is a separate file under
+  src/matcher/rules/ exporting (ctx) => Proposal[]. The pipeline runs them in
+  order; once a transaction has a confirmed allocation OR is unrelated, it's
+  skipped entirely.
+
+  Confidence buckets (drives auto-confirm vs. needs-review):
+  - >= 0.95 → auto-confirm: matcher writes the allocation as status:
+  'confirmed', source: 'auto', txn → auto_matched (or partially_allocated if
+  amount < invoice balance).
+  - 0.70 – 0.94 → propose: status: 'proposed', txn → needs_review. Reviewer
+  confirms with one click.
+  - < 0.70 → no proposal written; txn stays unmatched.
+
+  Rules in order (first one to score ≥ 0.70 wins for that txn):
+
+  R1 — Exact structured reference (confidence 1.00)
+  - transactions.structured_reference exact-equals an invoices.id, currency
+  matches.
+  - Amount equals invoice total → confirmed full payment.
+  - Amount < invoice total within tolerance → confirmed partial (txn
+  partially_allocated).
+  - Amount > invoice total → confirmed up to invoice total, remainder flagged
+  for review (overpayment).
+
+  R2 — Reference extracted from description (confidence 0.95)
+  - Regex /INV-\d{4}-\d{4}/ against description. Same amount logic as R1.
+
+  R3 — Fuzzy reference (confidence 0.85)
+  - structured_reference or description contains a token that's
+  Levenshtein-distance ≤ 2 from a known invoice id, OR matches the id with
+  separators stripped (INV20260003 ≈ INV-2026-0003). Amount must match within
+  tolerance.
+
+  R4 — Customer name + amount + date window (confidence 0.80)
+  - Normalize counterparty_name (lowercase, strip suffixes S.à r.l. / SARL /
+  S.A. / SCS / SARL-S, strip whitespace and punctuation, strip IBAN LU… tail).
+  - Compute Jaro-Winkler similarity against normalized invoices.customer_name.
+  Threshold 0.88.
+  - Among customer matches: amount equals an open invoice's balance, date within
+   issue_date − 7 days .. issue_date + 60 days. Single hit → propose.
+
+  R5 — Consolidated payment (subset-sum) (confidence 0.75)
+  - Same customer match as R4. Find a subset of that customer's open invoices
+  whose balances sum to the txn amount (±1 cent tolerance). Bounded: max 5
+  invoices, max 64 candidates considered (small DP). Single subset → propose
+  multi-row allocation. Multiple valid subsets → no proposal, txn stays
+  unmatched (reviewer disambiguates).
+
+  R6 — Credit-note netting (confidence 0.80)
+  - Run after R1–R5. For each open credit note, find an open invoice for the
+  same customer whose balance equals the credit note total (or matches a
+  remaining gap on a partially-allocated invoice). Propose a negative
+  allocation. Reviewer confirms.
+
+  R7 — Payout batch link (confidence 0.95)
+  - Find the txn whose amount equals payout_report.csv net total (2720.73) and
+  whose description/counterparty contains "payout" or "stripe". Link
+  payout_batches.transaction_id. Per-charge allocations are pre-built from the
+  CSV but stay proposed (Tier 2 — reviewer confirms the batch as a whole).
+
+  R8 — Non-AR classifier (noise) (confidence n/a)
+  - Keyword rules on description or counterparty_name: salary|payroll
+  out|rent|landlord|fee|bank charge|tax authority|refund out, OR amount is
+  negative AND no matching invoice. Sets transactions.status = 'unrelated' with
+  audit_log entry matcher_marked_unrelated. Reviewer can override.
+
+  Tolerances:
+  - Amount equality tolerance: ±2 cents (rounding drift).
+  - Overpayment threshold: > 5% AND > €5 → flagged for review; smaller →
+  auto-confirmed and a note is written to the audit log.
+  - Underpayment: any short payment is treated as a partial; invoice stays
+  partially_allocated.
+
+  Idempotency mechanics:
+  - For each (txn, invoice) pair the matcher is about to write: upsert on the
+  unique index. If a row exists with status != 'proposed', skip (matcher
+  invariant from §2). If it exists with status = 'proposed', update
+  confidence/rule/amount only if changed; otherwise touch nothing (no spurious
+  updated_at churn, no audit-log noise).
+  - Tracks per-run stats (rule fire counts, auto-confirmed count, proposed
+  count, skipped count) and returns them in MatcherReport. UI shows them after a
+   manual run.
+
+  Prepayments (Tier 2): the matcher doesn't try. R4 already requires date >=
+  issue_date - 7d, so a txn before issue date naturally falls through and stays
+  unmatched. DECISIONS.md notes that a real system would keep a "prepayment
+  ledger" and replay matches when invoices are issued.
+
+  What the matcher will NOT do: mutate confirmed or rejected rows, mark a txn
+  unrelated if it already has any allocation, or delete allocations. All
+  destructive moves are reviewer-only.
+
+  OK to move to section 4 (review UI)?
+✻ Churned for 37s
+
+❯ all the thresholds and config for days within of issue date, tolerances must
+  be in config
+
+⏺ Agreed. Amending:
+
+  packages/api/src/matcher/config.ts — single source of truth, exported as a
+  typed const, loaded from env with sensible defaults so it can be overridden in
+   docker-compose.yml without code changes:
+
+  export const matcherConfig = {
+    confidence: {
+      autoConfirm: numEnv('MATCHER_AUTO_CONFIRM', 0.95),
+      propose:     numEnv('MATCHER_PROPOSE',      0.70),
+    },
+    amountToleranceCents: intEnv('MATCHER_AMOUNT_TOLERANCE_CENTS', 2),
+    overpayment: {
+      pctThreshold:    numEnv('MATCHER_OVERPAY_PCT', 0.05),
+      absThresholdCents: intEnv('MATCHER_OVERPAY_ABS_CENTS', 500),
+    },
+    dateWindow: {
+      daysBeforeIssue: intEnv('MATCHER_DAYS_BEFORE_ISSUE', 7),
+      daysAfterIssue:  intEnv('MATCHER_DAYS_AFTER_ISSUE',  60),
+    },
+    fuzzyRef: {
+      maxLevenshtein: intEnv('MATCHER_FUZZY_LEV', 2),
+    },
+    customerName: {
+      jaroWinklerThreshold: numEnv('MATCHER_JW_THRESHOLD', 0.88),
+    },
+    subsetSum: {
+      maxInvoices:    intEnv('MATCHER_SUBSET_MAX_INVOICES', 5),
+      maxCandidates:  intEnv('MATCHER_SUBSET_MAX_CANDIDATES', 64),
+    },
+    ruleConfidence: {
+      exactRef:        numEnv('MATCHER_CONF_EXACT_REF', 1.00),
+      descriptionRef:  numEnv('MATCHER_CONF_DESC_REF',  0.95),
+      fuzzyRef:        numEnv('MATCHER_CONF_FUZZY_REF', 0.85),
+      nameAmountDate:  numEnv('MATCHER_CONF_NAME',      0.80),
+      subsetSum:       numEnv('MATCHER_CONF_SUBSET',    0.75),
+      creditNoteNet:   numEnv('MATCHER_CONF_CREDIT',    0.80),
+      payoutLink:      numEnv('MATCHER_CONF_PAYOUT',    0.95),
+    },
+    noiseKeywords: strArrEnv('MATCHER_NOISE_KEYWORDS', [
+      'salary','payroll out','rent','landlord','fee',
+      'bank charge','tax authority','refund out',
+    ]),
+  } as const;
+
+  - All rule files import from matcherConfig — no magic numbers in rule code.
+  - MatcherReport includes the resolved config snapshot so a run is reproducible
+   from the report alone.
+  - Tests construct configs with overrides (e.g. tighter tolerance) without env
+  vars.
+  - DECISIONS.md notes: "Tunable in env; UI for editing thresholds is a natural
+  follow-up but out of scope."
+
+  OK to move to section 4 (review UI)?
+
+❯ ok
+
+⏺ Design — section 4 of 5: Review UI
+
+  Single page at / — the workspace. No router beyond it (one route + a modal for
+   audit-log detail). Tailwind for styling. TanStack Query for all data;
+  mutations invalidate the relevant query keys. Optimistic updates only on the
+  cheap actions (status filter, selection); allocation writes wait for server
+  confirmation so version conflicts surface honestly.
+
+  Layout (3 columns, full viewport height):
+
+  ┌──────────────────────────┬──────────────────────────────────┬───────────────
+  ──────┐
+  │ Transaction list (35%)   │ Detail panel (45%)               │ Audit log
+  (20%)     │
+  │                          │                                  │
+        │
+  │ ─ filter chips           │ TXN-0023 · 2026-03-12 · €1,234   │ 14:02 reviewer
+        │
+  │   [needs review (12)]    │ "Payment Initech ref garbled"    │   confirmed
+  alloc   │
+  │   [auto matched (54)]    │ counterparty: INITECHLUX…SARL    │   TXN-0023 →
+  INV-…  │
+  │   [unmatched (8)]        │                                  │
+        │
+  │   [unrelated (4)]        │ ── Allocations ──                │ 13:58 matcher
+        │
+  │   [partially alloc (2)]  │ INV-2026-0003  €500.00   [×]     │   proposed
+  conf .85 │
+  │                          │ INV-2026-0019  €734.00   [×]     │
+        │
+  │ search box               │ + add allocation                 │ …
+        │
+  │                          │ remaining: €0.00 ✓               │
+        │
+  │ ─ sortable table         │                                  │
+        │
+  │   date | amount | cp     │ ── Matcher proposals ──          │
+        │
+  │   ▸ TXN-0001 …           │ INV-2026-0003 conf 0.85 [accept] │
+        │
+  │   ▸ TXN-0002 …           │ INV-2026-0019 conf 0.72 [accept] │
+        │
+  │   ▶ TXN-0023 (selected)  │                                  │
+        │
+  │   ▸ TXN-0024 …           │ ── Actions ──                    │
+        │
+  │                          │ [mark unrelated] [run matcher]   │
+        │
+  └──────────────────────────┴──────────────────────────────────┴───────────────
+  ──────┘
+
+  Components:
+
+  - TransactionList — TanStack Query for GET
+  /api/transactions?status=…&search=…. Filter chips show counts (single
+  aggregate endpoint GET /api/transactions/stats). Row shows date, amount,
+  counterparty, status badge, structured ref. Click selects.
+  - TransactionDetail — header (txn fields), AllocationsEditor,
+  MatcherProposals, ActionBar.
+
+    - AllocationsEditor: rows of (invoice picker, amount input, remove). "+ add
+  allocation" appends a row. Footer shows txn amount − Σ allocations =
+  remaining. Save button enabled only when remaining is within tolerance OR user
+   explicitly chose "save partial". Save calls PUT
+  /api/transactions/:id/allocations with the full list AND the version token
+  from the read; 409 → toast "Updated by someone else, refresh."
+    - InvoicePicker: combobox over GET /api/invoices?customer_id=…&status=open
+  with debounced search. Defaults customer filter to the txn's matched customer.
+   Shows: invoice id, customer, total, balance.
+    - MatcherProposals: read-only list of proposed allocations the matcher
+  generated. Each row has [accept] (promotes that single proposal to confirmed
+  without touching others) and [reject]. Hidden if list is empty.
+    - PayoutBatchView (conditional): when txn is the payout, replace
+  AllocationsEditor with a payout-specific view — list of
+  charges/refund/chargeback from payout_items, each with its proposed invoice
+  and a checkbox. "Confirm batch" promotes all checked items at once. Fees are
+  recorded as a non-AR allocation note (no invoice linkage).
+    - CreditNoteAttach: in AllocationsEditor's invoice picker, credit notes for
+  the same customer appear with a [CN] badge. Picking one auto-fills its
+  negative amount. UI-only convenience; backend treats it as a normal allocation
+   row with negative amount.
+    - ActionBar: [mark unrelated] (with confirm), [run matcher] (idempotent).
+  - AuditLog — GET /api/audit?entity_id=:id. Shows last 50 events for the
+  selected txn. Each row: timestamp · actor · action · one-line summary. Click
+  expands to show before/after JSON in a modal.
+
+  Empty/edge states explicitly handled:
+  - No selection → detail panel shows "Select a transaction to review" + matcher
+   run button.
+  - Txn with zero matcher proposals AND zero allocations → AllocationsEditor
+  opens with an empty row.
+  - Version conflict on save → toast + auto-refetch + keep user's edits in a
+  "your changes" dialog they can re-apply.
+
+  TanStack Query keys (kept simple):
+  - ['transactions', { status, search }], ['transaction', id], ['allocations',
+  txnId], ['proposals', txnId], ['audit', txnId], ['stats'], ['invoices', {
+  customerId, status }].
+  - Mutations invalidate ['transaction', id], ['allocations', txnId], ['stats'],
+   ['audit', txnId].
+
+  What's deliberately not in the UI (DECISIONS.md):
+  - No invoice-centric view (drilling from invoice → its allocations). Reviewer
+  workflow is txn-driven, and the rubric calls out the txn review experience.
+  - No bulk actions ("confirm all proposals above 0.9"). Tempting but a footgun
+  without per-row review.
+  - No matcher config UI — env vars only.
+  - No login. Audit log records 'reviewer' as actor.
+
+  OK to move to section 5 (audit, concurrency, deliverables mapping)?
+
+✻ Crunched for 37s
+
+❯ ok
+
+⏺ Design — section 5 of 5: Audit, concurrency, API surface, deliverables
+
+  Audit log writes — every state change goes through one helper recordAudit(tx,
+  {entity_type, entity_id, action, actor, before, after}) called inside the same
+   DB transaction as the change. Never written from the client; the API derives
+  actor from a request header (hardcoded reviewer for now). Append-only — no
+  UPDATE or DELETE allowed (enforced by Postgres trigger raising EXCLUSION on
+  non-INSERT). Indexed on (entity_id, created_at desc) for the panel query.
+
+  Actions written:
+  - Matcher: matcher_proposed, matcher_updated, matcher_auto_confirmed,
+  matcher_marked_unrelated, matcher_skipped_locked.
+  - Reviewer: reviewer_confirmed, reviewer_rejected, reviewer_split,
+  reviewer_edited_allocation, reviewer_marked_unrelated,
+  reviewer_unmarked_unrelated, reviewer_attached_credit_note,
+  reviewer_confirmed_payout_batch.
+
+  before/after are the full row jsonb at change time so the modal can diff them.
+   For multi-row changes (e.g. split into 3 allocations), one audit row per
+  affected allocation, all sharing a correlation_id jsonb field so the UI can
+  group them as one logical action.
+
+  Concurrency (per Q5):
+  - transactions.version int. Read endpoints return it. All write endpoints that
+   touch a transaction or its allocations require If-Match: <version> header (or
+   a version field in body); API does UPDATE transactions SET version = version
+  + 1 WHERE id = $1 AND version = $2 RETURNING version inside the same DB tx as
+  the change. Zero rows updated → API returns 409 with the current version +
+  entity body. UI shows the conflict toast.
+  - Matcher uses SELECT … FOR UPDATE SKIP LOCKED per transaction so two parallel
+   matcher runs don't double-write. Records matcher_skipped_locked to audit when
+   it skips. (Realistically one matcher runs at a time, but this is cheap
+  insurance and demonstrates the awareness.)
+
+  API surface (Fastify + zod schemas from shared/):
+  - GET    /api/transactions?status=&search=&cursor=
+  - GET    /api/transactions/stats
+  - GET    /api/transactions/:id (returns txn + version + allocations +
+  proposals + payout batch if any)
+  - PUT    /api/transactions/:id/allocations body: { allocations: [{invoice_id,
+  amount}], version } — replaces the full allocation set as one tx
+  - POST   /api/transactions/:id/mark-unrelated body: { version }
+  - POST   /api/transactions/:id/unmark-unrelated body: { version }
+  - POST   /api/proposals/:id/accept body: { version }
+  - POST   /api/proposals/:id/reject body: { version }
+  - POST   /api/payout-batches/:id/confirm body: { version, accepted_item_ids:
+  [] }
+  - GET    /api/invoices?customer_id=&status=&search=
+  - GET    /api/audit?entity_id=&limit=
+  - POST   /api/matcher/run → returns MatcherReport
+
+  All write endpoints run inside one db.transaction() covering: the change +
+  version bump + audit insert. No partial states.
+
+  Testing (kept proportional to budget):
+  - API: vitest + a real Postgres in docker-compose.test.yml. One e2e per
+  matcher rule using a tiny fixture (R1: exact ref → confirmed, R5: subset sum →
+   proposed, R7: payout link, etc.). Idempotency assertion: run matcher twice,
+  assert allocations table identical. Concurrency assertion: two parallel PUT
+  /allocations for same txn, one returns 409.
+  - Web: smoke test — render workspace, select a needs-review txn, accept a
+  proposal, assert audit row appears. Skip exhaustive component tests; budget
+  goes to matcher correctness.
+  - Fixture-based asserted truth: task/labels.json (committed) maps every TXN id
+   to its expected outcome ({ txn_id, expected_status, expected_invoices: [...],
+   expected_allocation_cents: {...} }). One test loads the full fixture, runs
+  seed + matcher, walks every txn, asserts the matcher produced the labeled
+  outcome (auto/proposed/unmatched). This is the ground-truth assertion that
+  satisfies the eval question without needing an LLM eval.
+
+  Deliverables mapping (so nothing slips):
+  - README.md — what it does, docker compose up, screenshots, "what's missing"
+  list.
+  - DECISIONS.md — Tier 3 deferrals (FX), no-auth/no-bulk/no-invoice-view,
+  env-only matcher config, the matcher-only-touches-proposed invariant, why
+  integer cents, why single workspace page.
+  - AI-WORKFLOW.md — tools used; one override moment; one big save (likely:
+  scaffolding the Drizzle schema or the matcher rule files).
+  - EVAL.md — short note: "no LLM in matcher; correctness verified via labeled
+  fixture in task/labels.json covering all 80 transactions; results: X/80
+  auto-confirmed, Y/80 proposed, Z/80 unmatched, all matching ground truth."
+  - PROMPTS.md — 3–5 prompts captured during build.
+  - Loom — 3–5 min: matcher run from cold boot, walking through one auto match,
+  one needs-review confirm, one consolidated split, the payout batch, the audit
+  log, and one optimistic-lock conflict.
+
+  Scope summary (for the reader's sanity):
+  - ~12 endpoints, ~7 tables, ~8 matcher rules, 1 React page with ~6 components,
+   ~10 backend tests + the labeled fixture sweep + 1 web smoke test.
+  - Cuts called out explicitly: auth, multi-tenant, FX, bank-feed sync,
+  invoice-centric view, bulk actions, matcher config UI, prepayment ledger, real
+   notifications.
+
+  That's the full design. Approve and I'll write it to
+  docs/superpowers/specs/2026-04-27-reconciler-design.md, run a self-review, and
+   hand it to you for final review before we move to the implementation plan.
+
+✻ Worked for 38s
+
+❯ I approve
+
+⏺ Bash(mkdir -p /Users/alex/code/easy-reconciler/docs/superpowers/specs && ls
+      /Users/alex/code/easy-reconciler/)
+  ⎿  AI-WORKFLOW.md
+     DECISIONS.md
+     docs
+     … +3 lines (ctrl+o to expand)
+
+⏺ Write(docs/superpowers/specs/2026-04-27-reconciler-design.md)
+  ⎿  Wrote 320 lines to
+     docs/superpowers/specs/2026-04-27-reconciler-design.md
+       2 # Invoice ↔ Transaction Reconciler — Design Spec
+       4 Status: approved, ready for implementation planning
+       6 ## Goal
+       8 Build a reconciliation tool that matches the 80 bank transaction
+         s in `task/transactions.json` against the 52 invoices/credit not
+         _report.csv`, auto-closes confidently matched transactions, and
+         y allocate, attach credit notes, or mark as unrelated — with an
+       9 audit trail.
+         + Vite, TypeScript end-to-end, pnpm workspaces, runnable via `do
+         cker compose up`.
+     … +466 lines (ctrl+o to expand)
+
+⏺ Self-review found three issues. Fixing them inline.
+
+  Issue 1 — Matcher invariant contradiction. I wrote "matcher only
+  inserts/updates rows where status = 'proposed'", but the auto-confirm path
+  explicitly inserts confirmed rows. The invariant is about not touching
+  existing non-proposed rows. Clarifying.
+
+  Issue 2 — R7 ambiguity. Confidence 0.95 ≥ auto-confirm threshold, but text
+  says payout items "stay proposed regardless." The auto-confirm applies to the
+  txn-to-batch link; the per-charge allocations are always proposed. Splitting
+  these explicitly.
+
+  Issue 3 — Concurrency scope unclear. version is on transactions, but
+  allocation/proposal/payout-batch endpoints all mutate transaction state. Need
+  to state explicitly that those endpoints bump the parent txn's version.
+
+⏺ Update(docs/superpowers/specs/2026-04-27-reconciler-design.md)
+  ⎿  Added 1 line, removed 1 line
+      119  - `created_by` text — `'matcher' | 'reviewer'`
+      120  - `created_at`, `updated_at`
+      121  - **Unique index** on `(transaction_id, invoice_id)` where `in
+           voice_id is not null` — keeps matcher upserts idempotent.
+      122 -- **Matcher invariant:** matcher only inserts/updates rows whe
+          -re `status = 'proposed'`. Once a row is `confirmed` or `reject
+          -ed`, matcher leaves it alone. Enforced in matcher code, assert
+          -ed in tests.
+      122 +- **Matcher invariant:** matcher freely *inserts new* allocati
+          +on rows (with `proposed` or `confirmed` status, depending on c
+          +onfidence bucket). When a row already exists for the same `(tr
+          +ansaction_id, invoice_id)`, matcher only modifies it if its cu
+          +rrent `status = 'proposed'`. Once a row is `confirmed` or `rej
+          +ected`, matcher leaves it alone. Enforced in matcher code, ass
+          +erted in tests.
+      123
+      124  "Marked unrelated" is **not** an allocation row — it's `transa
+           ctions.status = 'unrelated'`. Allocations always represent val
+           ue flowing to an invoice.
+      125
+
+⏺ Update(docs/superpowers/specs/2026-04-27-reconciler-design.md)
+  ⎿  Added 4 lines, removed 2 lines
+      184  **R6 — Credit-note netting** (conf 0.80)
+      185  - Runs after R1–R5. For each open credit note, find an open in
+           voice for the same customer whose balance equals the credit no
+           te total (or matches a remaining gap on a partially-allocated
+           invoice). Propose a negative allocation.
+      186
+      187 -**R7 — Payout batch link** (conf 0.95)
+      188 -- Find the txn whose amount equals payout net total and whose
+          -description/counterparty contains `payout` or `stripe`. Link `
+          -payout_batches.transaction_id`. Per-charge allocations pre-bui
+          -lt from CSV stay `proposed` regardless of confidence (Tier 2 —
+          - reviewer confirms the batch).
+      187 +**R7 — Payout batch link** (conf 0.95 on the txn↔batch link on
+          +ly)
+      188 +- Find the txn whose amount equals payout net total and whose
+          +description/counterparty contains `payout` or `stripe`. Link `
+          +payout_batches.transaction_id` and set `transactions.status =
+          +'payout_batch'`. The link itself is auto-confirmed (high confi
+          +dence, low ambiguity).
+      189 +- Per-charge allocations from the CSV are pre-built and always
+          + written as `status: 'proposed'` regardless of confidence — Ti
+          +er 2 behavior, reviewer confirms the batch via `POST /api/payo
+          +ut-batches/:id/confirm`.
+      190 +- Refunds and chargebacks have no `invoice_id` link in the CSV
+          +; they are surfaced in `PayoutBatchView` as informational rows
+          +, not allocations.
+      191
+      192  **R8 — Non-AR classifier (noise)**
+      193  - Keyword rules on `description`/`counterparty_name` from `noi
+           seKeywords` config, OR negative amount with no matching invoic
+           e. Sets `transactions.status = 'unrelated'` with `matcher_mark
+           ed_unrelated` audit row. Reviewer can override.
+
+⏺ Update(docs/superpowers/specs/2026-04-27-reconciler-design.md)
+  ⎿  Added 4 lines, removed 2 lines
+      280
+      281  ## Concurrency
+      282
+      283 -- `transactions.version` int. Read endpoints return it. Write
+          -endpoints require `version` in body. API does `UPDATE transact
+          -ions SET version = version + 1 WHERE id = $1 AND version = $2
+          -RETURNING version` inside the same DB tx as the change. Zero r
+          -ows updated → 409 with current version + entity body.
+      284 -- Matcher uses `SELECT … FOR UPDATE SKIP LOCKED` per transacti
+          -on.
+      283 +- `transactions.version` int is the single optimistic-lock tok
+          +en for all reviewer mutations. Reads return it; writes require
+          + it in the request body.
+      284 +- Every reviewer endpoint that touches *any* state attached to
+          + a transaction — `PUT /transactions/:id/allocations`, `mark-un
+          +related`, `unmark-unrelated`, `proposals/:id/accept`, `proposa
+          +ls/:id/reject`, `payout-batches/:id/confirm` — bumps the paren
+          +t txn's version inside the same DB transaction:
+      285 +  `UPDATE transactions SET version = version + 1 WHERE id = $1
+          + AND version = $2 RETURNING version`. Zero rows updated → 409
+          +with current version + entity body. The proposal/payout-batch
+          +endpoints look up the parent `transaction_id` from the proposa
+          +l/batch row and version-check on that.
+      286 +- Matcher uses `SELECT … FOR UPDATE SKIP LOCKED` per transacti
+          +on so two concurrent matcher runs don't double-write. Matcher
+          +writes do **not** bump `version` — version is for reviewer con
+          +currency only, and bumping it on matcher runs would cause spur
+          +ious 409s on every UI save after a background re-run.
+      287
+      288  ## API surface
+      289
+
+⏺ Spec written and self-review pass complete. Three fixes applied inline:
+
+  1. Matcher invariant clarified — matcher can insert new confirmed rows, but
+  won't modify existing confirmed/rejected ones.
+  2. R7 split: txn↔batch link is auto-confirmed; per-charge allocations are
+  always proposed; refunds/chargebacks are informational, not allocations.
+  3. Concurrency: every reviewer endpoint (proposals, payout-batch,
+  mark-unrelated, allocations) bumps the parent txn's version. Matcher runs do
+  not bump version — would cause spurious 409s.
+
+  Spec lives at docs/superpowers/specs/2026-04-27-reconciler-design.md. The repo
+   isn't a git repo yet (per env), so I haven't committed — let me know if you
+  want me to git init and commit it.
+
+  Please review the spec and let me know if you want to make any changes before
+  we move to the implementation plan.
+
+✻ Brewed for 3m 15s
+
+※ recap: Goal: design and plan a Fastify+Drizzle+Postgres+React reconciler for the EasyBiz take-home. The full design spec is written to docs/superpowers/specs/2026-04-27-reconciler-design.md and waiting for your review. Next: read it and approve or request changes before we move to the implementation plan. (disable recaps in /config)
+❯ is there any particular reason to use Postgres 16 instead of 18?
+
+⏺ Honest answer: no good reason — picked 16 out of habit. PG 18 has been GA
+  since September 2025, the official postgres:18-alpine image is stable,
+  Drizzle's pg driver supports it without changes, and we use nothing that's
+  version-sensitive (just bigint, numeric, text, jsonb, timestamptz, a
+  UPDATE/DELETE-blocking trigger, and FOR UPDATE SKIP LOCKED — all rock-solid
+  since PG 9.x).
+
+  PG 18 actually nets us minor wins for free: async I/O on sequential scans (the
+   labeled-fixture sweep does a few), faster pg_upgrade, virtual generated
+  columns (would let us store invoices.status as a derived column instead of
+  computing in queries — but I'd still keep it in queries to avoid coupling
+  allocation logic to the schema).
+
+  Switching the spec to PG 18.
+
+⏺ Update(docs/superpowers/specs/2026-04-27-reconciler-design.md)
+  ⎿  Added 1 line, removed 1 line
+       7
+       8  Build a reconciliation tool that matches the 80 bank transactio
+          ns in `task/transactions.json` against the 52 invoices/credit n
+          otes in `task/invoices.json`, parses the Stripe-style `task/pay
+          out_report.csv`, auto-closes confidently matched transactions,
+          and routes the rest to a review UI where a human can split, par
+          tially allocate, attach credit notes, or mark as unrelated — wi
+          th an audit trail.
+       9
+      10 -Stack: Fastify + Drizzle + Postgres 16 + React + TanStack Query
+         - + Vite, TypeScript end-to-end, pnpm workspaces, runnable via `
+         -docker compose up`.
+      10 +Stack: Fastify + Drizzle + Postgres 18 + React + TanStack Query
+         + + Vite, TypeScript end-to-end, pnpm workspaces, runnable via `
+         +docker compose up`.
+      11
+      12  ## Scope decisions
+      13
+
+⏺ Updated. Anything else in the spec you want to revise, or are we good to move
+  to the implementation plan?
+
+❯ good to move
+
+⏺ Skill(superpowers:writing-plans)
+  ⎿  Successfully loaded skill
+
+⏺ I'm using the writing-plans skill to create the implementation plan.
+
+  This will be a long document — for a fresh engineer with no context to execute
+   task-by-task. Saving to docs/superpowers/plans/2026-04-27-reconciler.md.
+
+⏺ Bash(mkdir -p /Users/alex/code/easy-reconciler/docs/superpowers/plans)
+  ⎿  Done
+
+⏺ Write(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Wrote 1160 lines to docs/superpowers/plans/2026-04-27-reconciler.md
+      2 # Reconciler Implementation Plan
+        bagent-driven-development (recommended) or superpowers:executing-
+        plans to implement this plan task-by-task. Steps use checkbox (`-
+      4  [ ]`) syntax for tracking.
+      5 **Goal:** Build the EasyBiz invoice ↔ transaction reconciler per
+        es-backed, deterministic matcher, single-page review UI, runnable
+      6  via `docker compose up`.
+      7 **Architecture:** pnpm monorepo (`shared`, `api`, `web`). Fastify
+        Query + Tailwind on the frontend. Matcher is a pure deterministic
+         pipeline of or
+     … +1222 lines (ctrl+o to expand)
+
+⏺ Phase 1 setup tasks written (tasks 1-8). Continuing with the matcher pipeline
+  tasks.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Phase 1 complete (tasks 1-16). Continuing with Phase 2 (heuristics).
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Phase 2 done (tasks 17-30). Now the UI (Phase 3) and docs.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Plan complete. Running the writing-plans self-review now.
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+⏺ Self-review done. Findings:
+
+  - Placeholder scan: clean. The one <fill in after running> is intentional in
+  the EVAL.md template — the implementer fills it after the sweep runs.
+  - Spec coverage: all sections mapped. One known scope cut documented inline in
+   Task 33: PayoutBatchView.tsx is stubbed (not wired in v1) — the API endpoint
+  POST /api/payout-batches/:id/confirm exists from Task 27, but the dedicated
+  reviewer UI is deferred. Reviewer can still see/accept individual payout-link
+  proposals through the standard MatcherProposals component.
+  - Type consistency: rule entrypoints (runR1ExactRef…runR8Noise), helpers
+  (recordAudit, upsertProposed, recomputeTxStatus, matcherConfig) all consistent
+   across tasks.
+  - Plan stats: 36 tasks, ~5,150 lines.
+
+⏺ Plan complete and saved to docs/superpowers/plans/2026-04-27-reconciler.md.
+  Two execution options:
+
+  1. Subagent-Driven (recommended) — I dispatch a fresh subagent per task,
+  review between tasks, fast iteration
+
+  2. Inline Execution — Execute tasks in this session using executing-plans,
+  batch execution with checkpoints
+
+  Which approach? (Or, if you'd rather review the plan yourself first before
+  executing, just say so and I'll wait.)
+
+✻ Brewed for 21m 46s
+
+❯ yes, I will review plan
+
+⏺ Sounds good. Plan is at docs/superpowers/plans/2026-04-27-reconciler.md (5,147
+   lines, 36 tasks across 4 phases). Ping me when you've reviewed it and we can
+  either start executing or adjust the plan first.
+
+※ recap: Goal is to plan the EasyBiz reconciler (Fastify + Drizzle + Postgres + React) before implementation. The 324-line spec and 5,147-line 36-task plan are written and saved; you're reviewing the plan. Next: tell me to execute (subagent-driven or inline) or request plan edits.
+❯ is it possible to use node 24 instead of 22? typescript 6 instead of 5?
+  tailwind 4 instead of 3?
+
+⏺ Honest answers:
+
+  Node 24: Yes, drop-in. Bump node:22-alpine to node:24-alpine in both
+  Dockerfiles. Node 24 is current LTS, no behavioral changes that affect this
+  stack.
+
+  Tailwind 4: Yes, but it's not a version bump — it's a config reshape. Tailwind
+   4 (Jan 2025) moved to CSS-first config: no tailwind.config.ts, no
+  postcss.config.js, three changes:
+  1. Replace the postcss plugin with the official Vite plugin
+  (@tailwindcss/vite).
+  2. src/index.css becomes a single line: @import "tailwindcss";.
+  3. Any theme customization moves into @theme { ... } blocks in CSS, not JS
+  config.
+
+  Net effect on the plan: Task 31 gets simpler (fewer config files), no other
+  tasks change.
+
+  TypeScript 6: I don't have a confident answer. My knowledge cutoff is Jan 2026
+   and I genuinely don't remember a TS 6.x release — the announced next major
+  was TypeScript 7 (the Go-native rewrite, "TypeScript Native"), with 5.x
+  continuing in parallel. Please check npm view typescript versions --json |
+  tail and use whatever's latest stable. The plan code doesn't use any
+  version-specific TS features, so any 5.x or later works without edits.
+
+  Want me to apply the Node 24 + Tailwind 4 changes to the plan now (and bump
+  TypeScript to whatever you confirm is latest)?
+
+❯ use node 24, tailwind 4 and keep typescript 5
+
+⏺ Applying the changes now.
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Update(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Added 1 line, removed 1 line
+      786  - [ ] **Step 2: Create `packages/api/Dockerfile`**
+      787
+      788  ```dockerfile
+      789 -FROM node:22-alpine
+      789 +FROM node:24-alpine
+      790  WORKDIR /app
+      791  RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+      792  COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.
+           base.json ./
+
+⏺ Update(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Added 1 line, removed 1 line
+      4291  `packages/web/Dockerfile`:
+      4292
+      4293  ```dockerfile
+      4294 -FROM node:22-alpine
+      4294 +FROM node:24-alpine
+      4295  WORKDIR /app
+      4296  RUN corepack enable && corepack prepare pnpm@9.12.0 --activat
+            e
+      4297  COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig
+            .base.json ./
+
+⏺ Node 24 done. Now Tailwind 4 — bigger reshape.
+
+⏺ Update(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Added 2 lines, removed 3 lines
+      4163      "@types/react-dom": "18.3.0",
+      4164      "@vitejs/plugin-react": "4.3.2",
+      4165      "vite": "5.4.8",
+      4166 -    "tailwindcss": "3.4.13",
+      4167 -    "postcss": "8.4.47",
+      4168 -    "autoprefixer": "10.4.20",
+      4166 +    "tailwindcss": "4.0.0",
+      4167 +    "@tailwindcss/vite": "4.0.0",
+      4168      "vitest": "2.1.3",
+      4169      "@testing-library/react": "16.0.1",
+      4170      "@testing-library/jest-dom": "6.5.0",
+
+⏺ Update(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Added 2 lines, removed 1 line
+      4192  ```ts
+      4193  import { defineConfig } from "vite";
+      4194  import react from "@vitejs/plugin-react";
+      4195 +import tailwindcss from "@tailwindcss/vite";
+      4196
+      4197  export default defineConfig({
+      4197 -  plugins: [react()],
+      4198 +  plugins: [react(), tailwindcss()],
+      4199    server: {
+      4200      port: 5173,
+      4201      proxy: { "/api": { target: "http://api:3001", changeOrigi
+            n: true } },
+
+⏺ Update(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Added 10 lines, removed 18 lines
+      4221  </html>
+      4222  ```
+      4223
+      4224 -- [ ] **Step 5: Create Tailwind config**
+      4224 +- [ ] **Step 5: Create Tailwind 4 stylesheet**
+      4225
+      4226 -`packages/web/postcss.config.js`:
+      4226 +Tailwind 4 is CSS-first: no `tailwind.config.ts`, no `postcss
+           +.config.js`. Content sources are auto-detected by the Vite pl
+           +ugin. All theme customization lives inside `@theme` blocks in
+           + CSS.
+      4227
+      4228 -```js
+      4229 -export default { plugins: { tailwindcss: {}, autoprefixer: {}
+           - } };
+      4230 -```
+      4228 +`packages/web/src/index.css`:
+      4229
+      4232 -`packages/web/tailwind.config.ts`:
+      4233 -
+      4234 -```ts
+      4235 -import type { Config } from "tailwindcss";
+      4236 -export default {
+      4237 -  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+      4238 -  theme: { extend: {} },
+      4239 -  plugins: [],
+      4240 -} satisfies Config;
+      4230 +```css
+      4231 +@import "tailwindcss";
+      4232  ```
+      4233
+      4243 -`packages/web/src/index.css`:
+      4234 +If you need theme tokens later, add them inline:
+      4235
+      4236  ```css
+      4246 -@tailwind base;
+      4247 -@tailwind components;
+      4248 -@tailwind utilities;
+      4237 +@import "tailwindcss";
+      4238 +@theme {
+      4239 +  --color-brand: #2563eb;
+      4240 +}
+      4241  ```
+      4242
+      4243  - [ ] **Step 6: Create `packages/web/src/main.tsx`**
+
+⏺ Updating the file-structure header to drop the removed config files.
+
+⏺ Update(docs/superpowers/plans/2026-04-27-reconciler.md)
+  ⎿  Added 2 lines, removed 3 lines
+       94      web/
+       95        package.json
+       96        tsconfig.json
+       97 -      vite.config.ts
+       97 +      vite.config.ts                # registers @tailwindcss/v
+          +ite (Tailwind 4)
+       98        Dockerfile
+       99        index.html
+      100 -      tailwind.config.ts
+      101 -      postcss.config.js
+      100        src/
+      101 +        index.css                   # @import "tailwindcss"; (
+          +CSS-first config)
+      102          main.tsx
+      103          App.tsx
+      104          api/
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+⏺ All three changes applied:
+
+  - Node 24: both Dockerfiles bumped (packages/api/Dockerfile,
+  packages/web/Dockerfile).
+  - Tailwind 4: Task 31 reshape — tailwindcss@4.0.0 + @tailwindcss/vite@4.0.0,
+  dropped postcss + autoprefixer deps, dropped postcss.config.js +
+  tailwind.config.ts files, vite plugin registered, src/index.css is now @import
+   "tailwindcss";. File-structure header updated.
+  - TypeScript 5: unchanged (5.6.3).
+
+  Net file changes: 5 edits. Plan still stands at 36 tasks. Continue your
+  review.
+
+✻ Worked for 57s
+
+❯ plan looks good, let's continue
+
+⏺ Plan is approved and ready to execute. Which approach do you want:
+
+  1. Subagent-Driven (recommended by the skill) — I dispatch a fresh subagent
+  per task, review the diff between tasks, faster iteration, less context
+  pollution.
+
+  2. Inline Execution — I execute tasks directly in this session with periodic
+  checkpoints for your review.
+
+  A practical note before you choose: the plan starts with git init (the repo
+  isn't a git repo yet), and the first ~8 tasks are scaffolding (pnpm workspace,
+   Docker, Drizzle schema, seed). Either approach can handle that fine —
+  subagent-driven shines once we hit the matcher rules where each task is a
+  self-contained TDD cycle.
+
+  Which one?
+
+❯ /usage
+  ⎿  Status dialog dismissed
+
+❯ right now we stop. can you handle this plan in separate session later?
+
+⏺ Yes. Everything needed to resume is on disk:
+
+  - Spec: docs/superpowers/specs/2026-04-27-reconciler-design.md
+  - Plan: docs/superpowers/plans/2026-04-27-reconciler.md (36 tasks across 4
+  phases)
+
+  Saving a project memory so a future session has the pointer without you having
+   to re-explain.
+
+  Listed 1 directory, wrote 2 memories (ctrl+o to expand)
+
+⏺ Saved. To resume in a future session, just say something like:
+
+  ▎ "Continue the reconciler project — start executing the plan."
+
+  I'll pick up from the memory pointer, re-read the spec and plan, ask which
+  execution mode you want (subagent-driven vs inline), and start at Task 1. Talk
+   soon.

@@ -1,6 +1,7 @@
 # Example Prompts
 
 Representative prompts used during the build, in roughly chronological order.
+Also check `docs/prompts/**`.
 
 **1. Brainstorming-driven design session**
 
