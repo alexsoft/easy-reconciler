@@ -94,7 +94,8 @@ async function seedTransactions() {
 
 async function seedPayout() {
   const raw = readFileSync(`${taskDir}/payout_report.csv`, 'utf-8');
-  const rows = parseCsv(raw, { columns: true, skip_empty_lines: true }) as Array<Record<string, string>>;
+  type PayoutRow = { type: string; charge_id: string; customer_name: string; invoice_id: string; gross_amount: string; fee: string; net_amount: string };
+  const rows = parseCsv(raw, { columns: true, skip_empty_lines: true }) as Array<PayoutRow>;
 
   const totalRow = rows.find((r) => r.type === 'payout');
   if (!totalRow) {
