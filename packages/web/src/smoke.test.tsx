@@ -36,6 +36,6 @@ describe('workspace smoke', () => {
         <Workspace />
       </QueryClientProvider>,
     );
-    expect(await screen.findByText('Acme')).toBeInTheDocument();
+    expect(await screen.findByText('Acme')).toBeTruthy();
   });
 });
