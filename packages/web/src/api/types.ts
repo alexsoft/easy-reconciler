@@ -23,7 +23,7 @@ export interface AllocationDTO {
   transaction_id: string;
   invoice_id: string | null;
   amount: number;
-  confidence: string | null;
+  confidence: number | null;
   status: 'proposed' | 'confirmed' | 'rejected';
   source: 'auto' | 'manual';
   rule: string | null;

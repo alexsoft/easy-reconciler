@@ -61,10 +61,11 @@ export async function transactionRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: 'not_found' });
     }
     const allocs = await db.select().from(allocations).where(eq(allocations.transaction_id, tx.id));
+    const normalize = (a: (typeof allocs)[number]) => ({ ...a, confidence: a.confidence != null ? Number(a.confidence) : null });
     return {
       ...tx,
-      allocations: allocs.filter((a) => a.status !== 'proposed'),
-      proposals: allocs.filter((a) => a.status === 'proposed'),
+      allocations: allocs.filter((a) => a.status !== 'proposed').map(normalize),
+      proposals: allocs.filter((a) => a.status === 'proposed').map(normalize),
     };
   });
 
