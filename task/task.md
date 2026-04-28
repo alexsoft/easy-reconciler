@@ -12,7 +12,7 @@ EasyBiz helps Luxembourg SMEs keep their books clean. One of the recurring jobs 
 
 - `invoices.json` — 52 records (50 invoices + 2 credit notes). Each has a header and line items.
 - `transactions.json` — 80 bank transactions (date, amount, noisy counterparty name, sometimes a structured reference, freeform description).
-- `payout_report.csv` — one Stripe-style payout report you'll need to break apart. **Note:** only *one* transaction in `transactions.json` corresponds to this payout — the rest are direct bank movements.
+- `payout_report.csv` — one Stripe-style payout report you'll need to break apart. **Note:** only _one_ transaction in `transactions.json` corresponds to this payout — the rest are direct bank movements.
 
 <aside>
 📁
@@ -31,16 +31,16 @@ A tool that:
 
 1. **Auto-matches** transactions to invoices (and their line items where applicable), with a confidence score per match.
 2. **Handles — or explicitly defers with a documented reason — the realistic cases present in the data:**
-    - partial payments
-    - consolidated payments (one transaction settles multiple invoices)
-    - credit-note netting
-    - FX differences
-    - over/underpayment
-    - garbled invoice references
-    - payment-provider payouts (Stripe-style)
-    - prepayments (transaction arrives before invoice)
-    - duplicate re-imports (same transaction imported twice)
-    - unrelated noise (salary, rent, fees, refunds)
+   - partial payments
+   - consolidated payments (one transaction settles multiple invoices)
+   - credit-note netting
+   - FX differences
+   - over/underpayment
+   - garbled invoice references
+   - payment-provider payouts (Stripe-style)
+   - prepayments (transaction arrives before invoice)
+   - duplicate re-imports (same transaction imported twice)
+   - unrelated noise (salary, rent, fees, refunds)
 3. **Ships a review UI** for everything the matcher couldn't close confidently. A reviewer must be able to split a transaction across invoices, allocate partial payments, attach a credit note, or mark a transaction as unrelated — with an audit trail.
 
 Use whatever stack, tools, and AI you like. Our in-house stack is **Fastify + Drizzle + Postgres + React + TanStack Query** — matching it is a bonus but not required.
@@ -74,7 +74,7 @@ So you can focus your time:
 - **Programming rigor** — is your matcher idempotent if re-run? Do you think about concurrent reviewers? About indexes?
 - **AI proficiency** — how you prompt, how you catch AI errors, whether you verify with evals.
 - **Approach & tools** — deliberate choices, not defaults.
-- **Documentation** — can a stranger read your README and understand the *why*?
+- **Documentation** — can a stranger read your README and understand the _why_?
 - **Verification** — did you run what you claim works?
 - **Product sense for the unautomated 20%** — what does the review UI actually feel like to use?
 

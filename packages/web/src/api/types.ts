@@ -1,4 +1,10 @@
-export type TxStatus = "unmatched" | "auto_matched" | "partially_allocated" | "needs_review" | "unrelated" | "payout_batch";
+export type TxStatus =
+  | 'unmatched'
+  | 'auto_matched'
+  | 'partially_allocated'
+  | 'needs_review'
+  | 'unrelated'
+  | 'payout_batch';
 
 export interface TransactionListItem {
   id: string;
@@ -18,8 +24,8 @@ export interface AllocationDTO {
   invoice_id: string | null;
   amount: number;
   confidence: string | null;
-  status: "proposed" | "confirmed" | "rejected";
-  source: "auto" | "manual";
+  status: 'proposed' | 'confirmed' | 'rejected';
+  source: 'auto' | 'manual';
   rule: string | null;
   created_by: string;
 }
@@ -31,7 +37,7 @@ export interface TransactionDetail extends TransactionListItem {
 
 export interface InvoiceListItem {
   id: string;
-  type: "invoice" | "credit_note";
+  type: 'invoice' | 'credit_note';
   customer_id: string;
   customer_name: string;
   currency: string;

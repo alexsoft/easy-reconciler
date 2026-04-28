@@ -1,18 +1,24 @@
-import { eq } from "drizzle-orm";
-import cuid from "cuid";
-import type { DB } from "../../db/client.js";
-import { transactions, invoices, allocations } from "../../db/schema.js";
-import type { MatcherConfig } from "../config.js";
-import { normalizeCustomerName } from "../normalize.js";
-import { jaroWinkler } from "../jaro-winkler.js";
-import { openInvoicesForCustomer } from "../balance.js";
-import { recordAudit } from "../../db/audit.js";
+import { eq } from 'drizzle-orm';
+import cuid from 'cuid';
+import type { DB } from '../../db/client.js';
+import { transactions, invoices, allocations } from '../../db/schema.js';
+import type { MatcherConfig } from '../config.js';
+import { normalizeCustomerName } from '../normalize.js';
+import { jaroWinkler } from '../jaro-winkler.js';
+import { openInvoicesForCustomer } from '../balance.js';
+import { recordAudit } from '../../db/audit.js';
 
-interface Subset { invoices: Array<{ id: string; balance: number }>; sum: number }
+interface Subset {
+  invoices: Array<{ id: string; balance: number }>;
+  sum: number;
+}
 
 function findSingleSubset(
   candidates: Array<{ id: string; balance: number }>,
-  target: number, tolerance: number, maxInvoices: number, maxCandidates: number,
+  target: number,
+  tolerance: number,
+  maxInvoices: number,
+  maxCandidates: number,
 ): Subset | null {
   if (candidates.length > maxCandidates) candidates = candidates.slice(0, maxCandidates);
   let found: Subset | null = null;
@@ -37,10 +43,8 @@ function findSingleSubset(
   return foundCount === 1 ? found : null;
 }
 
-export async function runR5SubsetSum(
-  db: DB, cfg: MatcherConfig, fired: (rule: string) => void,
-): Promise<void> {
-  const txs = await db.select().from(transactions).where(eq(transactions.status, "unmatched"));
+export async function runR5SubsetSum(db: DB, cfg: MatcherConfig, fired: (rule: string) => void): Promise<void> {
+  const txs = await db.select().from(transactions).where(eq(transactions.status, 'unmatched'));
   if (txs.length === 0) return;
   const allInv = await db.select().from(invoices);
   const normInv = allInv.map((i) => ({ inv: i, norm: normalizeCustomerName(i.customer_name) }));
@@ -60,10 +64,16 @@ export async function runR5SubsetSum(
       const open = await openInvoicesForCustomer(db, cust);
       const candidates = open.map((o) => ({ id: o.id, balance: o.balance }));
       const subset = findSingleSubset(
-        candidates, tx.amount, cfg.amountToleranceCents,
-        cfg.subsetSum.maxInvoices, cfg.subsetSum.maxCandidates,
+        candidates,
+        tx.amount,
+        cfg.amountToleranceCents,
+        cfg.subsetSum.maxInvoices,
+        cfg.subsetSum.maxCandidates,
       );
-      if (subset && subset.invoices.length >= 2) { chosen = subset; break; }
+      if (subset && subset.invoices.length >= 2) {
+        chosen = subset;
+        break;
+      }
     }
     if (!chosen) continue;
 
@@ -71,18 +81,25 @@ export async function runR5SubsetSum(
     for (const inv of chosen.invoices) {
       const id = cuid();
       await db.insert(allocations).values({
-        id, transaction_id: tx.id, invoice_id: inv.id,
+        id,
+        transaction_id: tx.id,
+        invoice_id: inv.id,
         amount: inv.balance,
         confidence: cfg.ruleConfidence.subsetSum.toFixed(2),
-        status: "proposed", source: "auto", rule: "subset_sum", created_by: "matcher",
+        status: 'proposed',
+        source: 'auto',
+        rule: 'subset_sum',
+        created_by: 'matcher',
       });
       await recordAudit(db, {
-        entity_type: "allocation", entity_id: id,
-        action: "matcher_proposed", actor: "matcher",
+        entity_type: 'allocation',
+        entity_id: id,
+        action: 'matcher_proposed',
+        actor: 'matcher',
         correlation_id: correlation,
-        after: { transaction_id: tx.id, invoice_id: inv.id, amount: inv.balance, status: "proposed" },
+        after: { transaction_id: tx.id, invoice_id: inv.id, amount: inv.balance, status: 'proposed' },
       });
-      fired("subset_sum");
+      fired('subset_sum');
     }
   }
 }

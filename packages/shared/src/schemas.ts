@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const InvoiceLineSchema = z.object({
   line_id: z.string(),
@@ -11,7 +11,7 @@ export const InvoiceLineSchema = z.object({
 
 export const InvoiceSchema = z.object({
   id: z.string(),
-  type: z.enum(["invoice", "credit_note"]),
+  type: z.enum(['invoice', 'credit_note']),
   customer_id: z.string(),
   customer_name: z.string(),
   customer_vat: z.string(),
@@ -41,7 +41,7 @@ export const PayoutItemCsvSchema = z.object({
   gross_amount: z.string(),
   fee: z.string(),
   net_amount: z.string(),
-  type: z.enum(["charge", "refund", "chargeback", "payout"]),
+  type: z.enum(['charge', 'refund', 'chargeback', 'payout']),
 });
 
 export type InvoiceInput = z.infer<typeof InvoiceSchema>;
@@ -49,19 +49,19 @@ export type TransactionInput = z.infer<typeof TransactionSchema>;
 export type PayoutItemCsv = z.infer<typeof PayoutItemCsvSchema>;
 
 export const TxStatus = z.enum([
-  "unmatched",
-  "auto_matched",
-  "partially_allocated",
-  "needs_review",
-  "unrelated",
-  "payout_batch",
+  'unmatched',
+  'auto_matched',
+  'partially_allocated',
+  'needs_review',
+  'unrelated',
+  'payout_batch',
 ]);
 export type TxStatus = z.infer<typeof TxStatus>;
 
-export const AllocationStatus = z.enum(["proposed", "confirmed", "rejected"]);
+export const AllocationStatus = z.enum(['proposed', 'confirmed', 'rejected']);
 export type AllocationStatus = z.infer<typeof AllocationStatus>;
 
-export const AllocationSource = z.enum(["auto", "manual"]);
+export const AllocationSource = z.enum(['auto', 'manual']);
 export type AllocationSource = z.infer<typeof AllocationSource>;
 
 export const TransactionDTO = z.object({

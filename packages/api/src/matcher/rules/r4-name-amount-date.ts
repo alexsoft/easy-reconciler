@@ -1,19 +1,17 @@
-import { eq } from "drizzle-orm";
-import type { DB } from "../../db/client.js";
-import { transactions, invoices } from "../../db/schema.js";
-import type { MatcherConfig } from "../config.js";
-import { normalizeCustomerName } from "../normalize.js";
-import { jaroWinkler } from "../jaro-winkler.js";
-import { invoiceBalance } from "../balance.js";
-import { upsertProposed } from "../upsert-allocation.js";
-import { withinTolerance } from "../score.js";
+import { eq } from 'drizzle-orm';
+import type { DB } from '../../db/client.js';
+import { transactions, invoices } from '../../db/schema.js';
+import type { MatcherConfig } from '../config.js';
+import { normalizeCustomerName } from '../normalize.js';
+import { jaroWinkler } from '../jaro-winkler.js';
+import { invoiceBalance } from '../balance.js';
+import { upsertProposed } from '../upsert-allocation.js';
+import { withinTolerance } from '../score.js';
 
 const dayMs = 24 * 60 * 60 * 1000;
 
-export async function runR4NameAmountDate(
-  db: DB, cfg: MatcherConfig, fired: (rule: string) => void,
-): Promise<void> {
-  const txs = await db.select().from(transactions).where(eq(transactions.status, "unmatched"));
+export async function runR4NameAmountDate(db: DB, cfg: MatcherConfig, fired: (rule: string) => void): Promise<void> {
+  const txs = await db.select().from(transactions).where(eq(transactions.status, 'unmatched'));
   if (txs.length === 0) return;
   const allInv = await db.select().from(invoices);
   const normInv = allInv.map((i) => ({ inv: i, norm: normalizeCustomerName(i.customer_name) }));
@@ -30,7 +28,7 @@ export async function runR4NameAmountDate(
     const candidates: typeof allInv = [];
     for (const { inv } of customerHits) {
       if (inv.currency !== tx.currency) continue;
-      if (inv.type !== "invoice") continue;
+      if (inv.type !== 'invoice') continue;
       const issue = new Date(inv.issue_date);
       const txDate = new Date(tx.date);
       const diff = (txDate.getTime() - issue.getTime()) / dayMs;
@@ -49,9 +47,9 @@ export async function runR4NameAmountDate(
       invoice_id: inv.id,
       amount: Math.min(tx.amount, balance),
       confidence: cfg.ruleConfidence.nameAmountDate,
-      rule: "name_amount_date",
-      bucket: "propose",
+      rule: 'name_amount_date',
+      bucket: 'propose',
     });
-    fired("name_amount_date");
+    fired('name_amount_date');
   }
 }

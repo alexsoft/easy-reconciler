@@ -5,9 +5,9 @@ services:
       POSTGRES_USER: reconciler
       POSTGRES_PASSWORD: reconciler
       POSTGRES_DB: reconciler
-    ports: ["5432:5432"]
+    ports: ['5432:5432']
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "reconciler"]
+      test: ['CMD', 'pg_isready', '-U', 'reconciler']
       interval: 2s
       timeout: 2s
       retries: 20
@@ -23,12 +23,12 @@ services:
       NODE_ENV: development
     depends_on:
       db: { condition: service_healthy }
-    ports: ["3001:3001"]
+    ports: ['3001:3001']
   web:
     build:
       context: .
       dockerfile: packages/web/Dockerfile
     depends_on: [api]
-    ports: ["5173:5173"]
+    ports: ['5173:5173']
 volumes:
   db-data: {}

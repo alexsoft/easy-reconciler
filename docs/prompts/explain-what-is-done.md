@@ -1,0 +1,1 @@
+As a Fastify + Drizzle + Postgres 18 + React + TanStack Query + Vite, TypeScript expert explain to me all the important things that I need to know, clarify or check. I want to be able to present the project, know it's main characteristics and technical things so that I could educate myself.

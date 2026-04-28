@@ -23,6 +23,7 @@ easy-reconciler/
 ## Prettier Config
 
 `.prettierrc`:
+
 ```json
 {
   "semi": true,
@@ -40,6 +41,7 @@ easy-reconciler/
 `eslint.config.ts` — ESLint 9 flat config format. Three rule blocks:
 
 ### Block 1 — All TypeScript files (`packages/*/src/**/*.{ts,tsx}`)
+
 - `@typescript-eslint/recommended`
 - `curly: ["error", "all"]` — always require braces on control flow
 - `no-console: "warn"`
@@ -47,22 +49,28 @@ easy-reconciler/
 - `no-unused-vars: "off"`, `@typescript-eslint/no-unused-vars: "error"`
 
 ### Block 2 — React files (`packages/web/src/**/*.{ts,tsx}`)
+
 Extends block 1 plus:
+
 - `eslint-plugin-react` recommended
 - `eslint-plugin-react-hooks` recommended
 - `react/react-in-jsx-scope: "off"` (React 17+ JSX transform)
 
 ### Block 3 — Config and test files (`**/*.config.ts`, `**/*.test.{ts,tsx}`)
+
 Relaxed override:
+
 - `no-console: "off"`
 
 ## npm Scripts
 
 Root `package.json`:
+
 - `"lint": "pnpm -r lint"` — already present, kept as-is
 - `"format": "prettier --write ."` — new
 
 Each package `package.json`:
+
 - `"lint": "eslint src"` — new
 
 ## Dependencies (root devDependencies)

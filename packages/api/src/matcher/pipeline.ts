@@ -1,20 +1,27 @@
-import { sql } from "drizzle-orm";
-import type { DB } from "../db/client.js";
-import { transactions } from "../db/schema.js";
-import { matcherConfig, type MatcherConfig } from "./config.js";
-import { runR1ExactRef } from "./rules/r1-exact-ref.js";
-import { runR2DescriptionRef } from "./rules/r2-description-ref.js";
-import { runR3FuzzyRef } from "./rules/r3-fuzzy-ref.js";
-import { runR4NameAmountDate } from "./rules/r4-name-amount-date.js";
-import { runR5SubsetSum } from "./rules/r5-subset-sum.js";
-import { runR6CreditNoteNet } from "./rules/r6-credit-note-net.js";
-import { runR7PayoutLink } from "./rules/r7-payout-link.js";
-import { runR8Noise } from "./rules/r8-noise.js";
-import { recomputeTxStatus } from "./update-tx-status.js";
+import { sql } from 'drizzle-orm';
+import type { DB } from '../db/client.js';
+import { transactions } from '../db/schema.js';
+import { matcherConfig, type MatcherConfig } from './config.js';
+import { runR1ExactRef } from './rules/r1-exact-ref.js';
+import { runR2DescriptionRef } from './rules/r2-description-ref.js';
+import { runR3FuzzyRef } from './rules/r3-fuzzy-ref.js';
+import { runR4NameAmountDate } from './rules/r4-name-amount-date.js';
+import { runR5SubsetSum } from './rules/r5-subset-sum.js';
+import { runR6CreditNoteNet } from './rules/r6-credit-note-net.js';
+import { runR7PayoutLink } from './rules/r7-payout-link.js';
+import { runR8Noise } from './rules/r8-noise.js';
+import { recomputeTxStatus } from './update-tx-status.js';
 
 export interface MatcherReport {
   config: MatcherConfig;
-  totals: { examined: number; autoConfirmed: number; proposed: number; markedUnrelated: number; skippedLocked: number; unchanged: number };
+  totals: {
+    examined: number;
+    autoConfirmed: number;
+    proposed: number;
+    markedUnrelated: number;
+    skippedLocked: number;
+    unchanged: number;
+  };
   perRule: Record<string, number>;
 }
 
@@ -27,7 +34,9 @@ export async function runMatcher(db: DB): Promise<MatcherReport> {
   const txs = await db.select().from(transactions);
   report.totals.examined = txs.length;
 
-  const fired = (rule: string) => { report.perRule[rule] = (report.perRule[rule] ?? 0) + 1; };
+  const fired = (rule: string) => {
+    report.perRule[rule] = (report.perRule[rule] ?? 0) + 1;
+  };
 
   await runR1ExactRef(db, matcherConfig, fired);
   await runR2DescriptionRef(db, matcherConfig, fired);
@@ -40,10 +49,12 @@ export async function runMatcher(db: DB): Promise<MatcherReport> {
 
   for (const tx of txs) await recomputeTxStatus(db, tx.id);
 
-  const stats = await db.select({
-    auto: sql<string>`count(*) filter (where status = 'auto_matched')`,
-    review: sql<string>`count(*) filter (where status = 'needs_review')`,
-  }).from(transactions);
+  const stats = await db
+    .select({
+      auto: sql<string>`count(*) filter (where status = 'auto_matched')`,
+      review: sql<string>`count(*) filter (where status = 'needs_review')`,
+    })
+    .from(transactions);
   report.totals.autoConfirmed = Number(stats[0]?.auto ?? 0);
   report.totals.proposed = Number(stats[0]?.review ?? 0);
 

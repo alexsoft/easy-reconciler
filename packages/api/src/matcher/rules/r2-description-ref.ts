@@ -1,17 +1,16 @@
-import { eq, and, isNull } from "drizzle-orm";
-import type { DB } from "../../db/client.js";
-import { transactions, invoices } from "../../db/schema.js";
-import type { MatcherConfig } from "../config.js";
-import { extractRefsFromText } from "../normalize.js";
-import { invoiceBalance } from "../balance.js";
-import { upsertProposed } from "../upsert-allocation.js";
+import { eq, and, isNull } from 'drizzle-orm';
+import type { DB } from '../../db/client.js';
+import { transactions, invoices } from '../../db/schema.js';
+import type { MatcherConfig } from '../config.js';
+import { extractRefsFromText } from '../normalize.js';
+import { invoiceBalance } from '../balance.js';
+import { upsertProposed } from '../upsert-allocation.js';
 
-export async function runR2DescriptionRef(
-  db: DB, cfg: MatcherConfig, fired: (rule: string) => void,
-): Promise<void> {
-  const txs = await db.select().from(transactions).where(
-    and(isNull(transactions.structured_reference), eq(transactions.status, "unmatched")),
-  );
+export async function runR2DescriptionRef(db: DB, cfg: MatcherConfig, fired: (rule: string) => void): Promise<void> {
+  const txs = await db
+    .select()
+    .from(transactions)
+    .where(and(isNull(transactions.structured_reference), eq(transactions.status, 'unmatched')));
 
   for (const tx of txs) {
     const refs = extractRefsFromText(tx.description);
@@ -24,16 +23,16 @@ export async function runR2DescriptionRef(
     const balance = await invoiceBalance(db, inv.id);
     if (balance <= 0) continue;
     const overAbs = tx.amount - balance;
-    const isOver = overAbs > cfg.overpayment.absThresholdCents
-      && (overAbs / Math.max(balance, 1)) > cfg.overpayment.pctThreshold;
+    const isOver =
+      overAbs > cfg.overpayment.absThresholdCents && overAbs / Math.max(balance, 1) > cfg.overpayment.pctThreshold;
     await upsertProposed(db, {
       transaction_id: tx.id,
       invoice_id: inv.id,
       amount: Math.min(tx.amount, balance),
       confidence: cfg.ruleConfidence.descriptionRef,
-      rule: "description_ref",
-      bucket: isOver ? "propose" : "auto_confirm",
+      rule: 'description_ref',
+      bucket: isOver ? 'propose' : 'auto_confirm',
     });
-    fired("description_ref");
+    fired('description_ref');
   }
 }

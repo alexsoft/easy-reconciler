@@ -1,6 +1,6 @@
-import { useAcceptProposal, useRejectProposal } from "../api/queries.js";
-import { Money } from "./Money.js";
-import type { TransactionDetail } from "../api/types.js";
+import { useAcceptProposal, useRejectProposal } from '../api/queries.js';
+import { Money } from './Money.js';
+import type { TransactionDetail } from '../api/types.js';
 
 export function MatcherProposals({ tx }: { tx: TransactionDetail }) {
   const accept = useAcceptProposal(tx.id);
@@ -15,10 +15,18 @@ export function MatcherProposals({ tx }: { tx: TransactionDetail }) {
           <span className="text-xs text-gray-500">conf {p.confidence}</span>
           <span className="text-xs text-gray-500">{p.rule}</span>
           <Money cents={p.amount} />
-          <button onClick={() => accept.mutate({ id: p.id, version: tx.version })}
-            className="px-2 py-0.5 bg-green-600 text-white rounded text-xs">accept</button>
-          <button onClick={() => reject.mutate({ id: p.id, version: tx.version })}
-            className="px-2 py-0.5 bg-gray-600 text-white rounded text-xs">reject</button>
+          <button
+            onClick={() => accept.mutate({ id: p.id, version: tx.version })}
+            className="px-2 py-0.5 bg-green-600 text-white rounded text-xs"
+          >
+            accept
+          </button>
+          <button
+            onClick={() => reject.mutate({ id: p.id, version: tx.version })}
+            className="px-2 py-0.5 bg-gray-600 text-white rounded text-xs"
+          >
+            reject
+          </button>
         </div>
       ))}
     </div>

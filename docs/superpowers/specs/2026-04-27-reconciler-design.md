@@ -14,6 +14,7 @@ Stack: Fastify + Drizzle + Postgres 18 + React + TanStack Query + Vite, TypeScri
 ### Edge case triage (three runtime behaviors)
 
 **Auto-close** (matcher writes a confirmed allocation, reviewer never sees it unless they look):
+
 1. Exact reference match
 2. Fuzzy reference match (garbled refs)
 3. Partial payments (allocation < invoice total → invoice stays `partially_paid`)
@@ -23,11 +24,10 @@ Stack: Fastify + Drizzle + Postgres 18 + React + TanStack Query + Vite, TypeScri
 7. Duplicate re-imports (idempotent dedup hash)
 8. Unrelated noise (salary/rent/fees → classified as non-AR, no match attempted)
 
-**Parse, but always route to review** (system understands the case but a human confirms):
-9. Stripe-style payouts — parsed into a payout batch with per-charge proposed allocations; the one matching transaction is linked to the batch.
-10. Prepayments (txn before invoice issue date) — flagged but not auto-matched.
+**Parse, but always route to review** (system understands the case but a human confirms): 9. Stripe-style payouts — parsed into a payout batch with per-charge proposed allocations; the one matching transaction is linked to the batch. 10. Prepayments (txn before invoice issue date) — flagged but not auto-matched.
 
 **Deferred** (documented in DECISIONS.md, no code):
+
 - True FX drift (multi-currency conversion). Fixture is EUR-only; would require an FX rate source.
 - Auth, multi-tenant, real bank-feed sync, email notifications, invoice-centric view, bulk reviewer actions, matcher config UI, prepayment ledger replay.
 
@@ -60,6 +60,7 @@ easy-reconciler/
 ### One-command boot
 
 `docker compose up`. The `api` container's entrypoint:
+
 1. Wait for Postgres.
 2. Run Drizzle migrations.
 3. Idempotent seed from `task/invoices.json`, `task/transactions.json`, `task/payout_report.csv` (upserts by source `id` / dedup hash).
@@ -77,6 +78,7 @@ Auth, multi-tenant, real bank-feed sync, FX conversion, email/notifications, inv
 All tables: `id` text PK from source data where available (cuid otherwise). Money stored as **integer cents** in `bigint` columns (Drizzle `bigint('amount', { mode: 'number' })`). Postgres `numeric` returns strings in JS; cents avoids that and stays exact within JS `Number` precision. Timestamps `timestamptz default now()`.
 
 ### `invoices`
+
 - `id` text PK (e.g. `INV-2026-0001`)
 - `type` text — `'invoice' | 'credit_note'`
 - `customer_id`, `customer_name`, `customer_vat` text
@@ -87,14 +89,16 @@ All tables: `id` text PK from source data where available (cuid otherwise). Mone
 - Status (`open | partially_paid | paid | overpaid`) is **derived** from allocations in the query layer, not stored.
 
 ### `invoice_lines`
+
 - `id` text PK (`INV-…-L1`)
 - `invoice_id` text FK
 - `description` text
 - `quantity` int
 - `unit_price`, `amount` bigint (cents)
-- `tax_rate` numeric(5,4)  — a rate, not money
+- `tax_rate` numeric(5,4) — a rate, not money
 
 ### `transactions`
+
 - `id` text PK (`TXN-0001`)
 - `date` date
 - `amount` bigint (cents, signed; positive = inbound)
@@ -108,6 +112,7 @@ All tables: `id` text PK from source data where available (cuid otherwise). Mone
 - `created_at`, `updated_at`
 
 ### `allocations` (heart of the system)
+
 - `id` cuid PK
 - `transaction_id` text FK
 - `invoice_id` text FK (nullable only for non-AR payout fees recorded for accounting completeness)
@@ -119,11 +124,12 @@ All tables: `id` text PK from source data where available (cuid otherwise). Mone
 - `created_by` text — `'matcher' | 'reviewer'`
 - `created_at`, `updated_at`
 - **Unique index** on `(transaction_id, invoice_id)` where `invoice_id is not null` — keeps matcher upserts idempotent.
-- **Matcher invariant:** matcher freely *inserts new* allocation rows (with `proposed` or `confirmed` status, depending on confidence bucket). When a row already exists for the same `(transaction_id, invoice_id)`, matcher only modifies it if its current `status = 'proposed'`. Once a row is `confirmed` or `rejected`, matcher leaves it alone. Enforced in matcher code, asserted in tests.
+- **Matcher invariant:** matcher freely _inserts new_ allocation rows (with `proposed` or `confirmed` status, depending on confidence bucket). When a row already exists for the same `(transaction_id, invoice_id)`, matcher only modifies it if its current `status = 'proposed'`. Once a row is `confirmed` or `rejected`, matcher leaves it alone. Enforced in matcher code, asserted in tests.
 
 "Marked unrelated" is **not** an allocation row — it's `transactions.status = 'unrelated'`. Allocations always represent value flowing to an invoice.
 
 ### `audit_log` (append-only)
+
 - `id` cuid PK
 - `entity_type` text — `'transaction' | 'allocation' | 'payout_batch'`
 - `entity_id` text
@@ -136,12 +142,14 @@ All tables: `id` text PK from source data where available (cuid otherwise). Mone
 - Postgres trigger blocks `UPDATE` and `DELETE` — append-only enforced at the DB level.
 
 ### `payout_batches`
+
 - `id` text PK (`po_1NfK2r2026EasyBiz`)
 - `transaction_id` text FK — the one txn that funds the batch
 - `gross_total`, `fee_total`, `net_total` bigint (cents)
 - `status` text — `'needs_review' | 'confirmed'`
 
 ### `payout_items`
+
 - `id` text PK (`ch_30NfK`, `rf_A1`, `cb_B1`, …)
 - `payout_batch_id` text FK
 - `invoice_id` text FK nullable (refunds/chargebacks may not link)
@@ -162,34 +170,42 @@ All tables: `id` text PK from source data where available (cuid otherwise). Mone
 ### Rules (first to score ≥ propose threshold wins for a given txn)
 
 **R1 — Exact structured reference** (conf 1.00)
+
 - `transactions.structured_reference` exact-equals an `invoices.id`, currencies match.
 - Amount equals invoice total → confirmed full payment.
 - Amount < invoice total within tolerance → confirmed partial.
 - Amount > invoice total → confirmed up to invoice total, remainder flagged as overpayment.
 
 **R2 — Reference extracted from description** (conf 0.95)
+
 - Regex `/INV-\d{4}-\d{4}/` against `description`. Same amount logic as R1.
 
 **R3 — Fuzzy reference** (conf 0.85)
+
 - `structured_reference` or `description` contains a token within Levenshtein ≤ `fuzzyRef.maxLevenshtein` of a known invoice id, OR matches the id with separators stripped (`INV20260003` ≈ `INV-2026-0003`). Amount must match within tolerance.
 
 **R4 — Customer name + amount + date window** (conf 0.80)
+
 - Normalize `counterparty_name`: lowercase; strip suffixes `S.à r.l. / SARL / S.A. / SCS / SARL-S`; strip whitespace and punctuation; strip `IBAN LU…` tail.
 - Compute Jaro-Winkler similarity vs normalized `invoices.customer_name`. Threshold from config.
 - Among customer matches: amount equals an open invoice's balance, date within `[issue_date − daysBeforeIssue, issue_date + daysAfterIssue]`. Single hit → propose; multiple → no proposal.
 
 **R5 — Consolidated payment (subset-sum)** (conf 0.75)
+
 - Same customer match as R4. Find a subset of that customer's open invoices whose balances sum to txn amount within tolerance. Bounded: max `subsetSum.maxInvoices` invoices, max `subsetSum.maxCandidates` candidates. Single subset → propose multi-row allocation. Multiple valid subsets → no proposal.
 
 **R6 — Credit-note netting** (conf 0.80)
+
 - Runs after R1–R5. For each open credit note, find an open invoice for the same customer whose balance equals the credit note total (or matches a remaining gap on a partially-allocated invoice). Propose a negative allocation.
 
 **R7 — Payout batch link** (conf 0.95 on the txn↔batch link only)
+
 - Find the txn whose amount equals payout net total and whose description/counterparty contains `payout` or `stripe`. Link `payout_batches.transaction_id` and set `transactions.status = 'payout_batch'`. The link itself is auto-confirmed (high confidence, low ambiguity).
 - Per-charge allocations from the CSV are pre-built and always written as `status: 'proposed'` regardless of confidence — Tier 2 behavior, reviewer confirms the batch via `POST /api/payout-batches/:id/confirm`.
 - Refunds and chargebacks have no `invoice_id` link in the CSV; they are surfaced in `PayoutBatchView` as informational rows, not allocations.
 
 **R8 — Non-AR classifier (noise)**
+
 - Keyword rules on `description`/`counterparty_name` from `noiseKeywords` config, OR negative amount with no matching invoice. Sets `transactions.status = 'unrelated'` with `matcher_marked_unrelated` audit row. Reviewer can override.
 
 ### Tolerances and prepayments
@@ -281,7 +297,7 @@ One helper `recordAudit(tx, {...})` called inside the same DB transaction as the
 ## Concurrency
 
 - `transactions.version` int is the single optimistic-lock token for all reviewer mutations. Reads return it; writes require it in the request body.
-- Every reviewer endpoint that touches *any* state attached to a transaction — `PUT /transactions/:id/allocations`, `mark-unrelated`, `unmark-unrelated`, `proposals/:id/accept`, `proposals/:id/reject`, `payout-batches/:id/confirm` — bumps the parent txn's version inside the same DB transaction:
+- Every reviewer endpoint that touches _any_ state attached to a transaction — `PUT /transactions/:id/allocations`, `mark-unrelated`, `unmark-unrelated`, `proposals/:id/accept`, `proposals/:id/reject`, `payout-batches/:id/confirm` — bumps the parent txn's version inside the same DB transaction:
   `UPDATE transactions SET version = version + 1 WHERE id = $1 AND version = $2 RETURNING version`. Zero rows updated → 409 with current version + entity body. The proposal/payout-batch endpoints look up the parent `transaction_id` from the proposal/batch row and version-check on that.
 - Matcher uses `SELECT … FOR UPDATE SKIP LOCKED` per transaction so two concurrent matcher runs don't double-write. Matcher writes do **not** bump `version` — version is for reviewer concurrency only, and bumping it on matcher runs would cause spurious 409s on every UI save after a background re-run.
 

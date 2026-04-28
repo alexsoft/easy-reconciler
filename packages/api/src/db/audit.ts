@@ -1,27 +1,27 @@
-import cuid from "cuid";
-import type { DB } from "./client.js";
-import { audit_log } from "./schema.js";
+import cuid from 'cuid';
+import type { DB } from './client.js';
+import { audit_log } from './schema.js';
 
 export type AuditAction =
-  | "matcher_proposed"
-  | "matcher_updated"
-  | "matcher_auto_confirmed"
-  | "matcher_marked_unrelated"
-  | "matcher_skipped_locked"
-  | "reviewer_confirmed"
-  | "reviewer_rejected"
-  | "reviewer_split"
-  | "reviewer_edited_allocation"
-  | "reviewer_marked_unrelated"
-  | "reviewer_unmarked_unrelated"
-  | "reviewer_attached_credit_note"
-  | "reviewer_confirmed_payout_batch";
+  | 'matcher_proposed'
+  | 'matcher_updated'
+  | 'matcher_auto_confirmed'
+  | 'matcher_marked_unrelated'
+  | 'matcher_skipped_locked'
+  | 'reviewer_confirmed'
+  | 'reviewer_rejected'
+  | 'reviewer_split'
+  | 'reviewer_edited_allocation'
+  | 'reviewer_marked_unrelated'
+  | 'reviewer_unmarked_unrelated'
+  | 'reviewer_attached_credit_note'
+  | 'reviewer_confirmed_payout_batch';
 
 export interface AuditEntry {
-  entity_type: "transaction" | "allocation" | "payout_batch";
+  entity_type: 'transaction' | 'allocation' | 'payout_batch';
   entity_id: string;
   action: AuditAction;
-  actor: "matcher" | "reviewer";
+  actor: 'matcher' | 'reviewer';
   correlation_id?: string;
   before?: unknown;
   after?: unknown;

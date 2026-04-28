@@ -1,9 +1,9 @@
-import { useTransaction } from "../api/queries.js";
-import { Money } from "./Money.js";
-import { StatusBadge } from "./StatusBadge.js";
-import { AllocationsEditor } from "./AllocationsEditor.js";
-import { MatcherProposals } from "./MatcherProposals.js";
-import { ActionBar } from "./ActionBar.js";
+import { useTransaction } from '../api/queries.js';
+import { Money } from './Money.js';
+import { StatusBadge } from './StatusBadge.js';
+import { AllocationsEditor } from './AllocationsEditor.js';
+import { MatcherProposals } from './MatcherProposals.js';
+import { ActionBar } from './ActionBar.js';
 
 export function TransactionDetail({ id }: { id: string }) {
   const tx = useTransaction(id);
@@ -20,7 +20,9 @@ export function TransactionDetail({ id }: { id: string }) {
             <div className="text-sm text-gray-600">{t.description}</div>
           </div>
           <div className="text-right">
-            <div className="text-2xl"><Money cents={t.amount} /></div>
+            <div className="text-2xl">
+              <Money cents={t.amount} />
+            </div>
             <div className="text-xs text-gray-500">{t.date}</div>
             <StatusBadge status={t.status} />
           </div>

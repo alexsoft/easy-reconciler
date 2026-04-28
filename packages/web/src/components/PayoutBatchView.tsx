@@ -1,1 +1,3 @@
-export function PayoutBatchView() { return null; }
+export function PayoutBatchView() {
+  return null;
+}

@@ -1,4 +1,4 @@
-import type { AuditEvent } from "../api/types.js";
+import type { AuditEvent } from '../api/types.js';
 export function AuditDiffModal({ event, onClose }: { event: AuditEvent; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center" onClick={onClose}>
@@ -8,7 +8,9 @@ export function AuditDiffModal({ event, onClose }: { event: AuditEvent; onClose:
           <pre className="bg-red-50 p-2 overflow-auto max-h-80">{JSON.stringify(event.before, null, 2)}</pre>
           <pre className="bg-green-50 p-2 overflow-auto max-h-80">{JSON.stringify(event.after, null, 2)}</pre>
         </div>
-        <button onClick={onClose} className="mt-2 px-3 py-1 border rounded text-sm">close</button>
+        <button onClick={onClose} className="mt-2 px-3 py-1 border rounded text-sm">
+          close
+        </button>
       </div>
     </div>
   );
