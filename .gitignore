@@ -6,6 +6,4 @@ dist
 *.log
 .DS_Store
 coverage
-drizzle/meta
-**/drizzle/meta
 2026-04-27-140324-local-command-caveatcaveat-the-messages-below.txt
