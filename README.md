@@ -22,8 +22,7 @@ docker compose down -v && docker compose up --build
 ## Tests
 
 ```bash
-docker compose -f docker-compose.test.yml up -d
-./bin/pnpm test
+./bin/test
 ```
 
 Runs all packages (`@reconciler/api` — 43 integration tests including the 80-transaction fixture sweep, `@reconciler/web` — 1 smoke test).
