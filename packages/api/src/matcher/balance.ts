@@ -67,7 +67,9 @@ export async function allOpenInvoicesByCustomer(
   const map = new Map<string, Array<{ id: string; balance: number; customer_name: string }>>();
   for (const r of rows) {
     const balance = r.total - Number(r.allocated);
-    if (balance <= 0) continue;
+    if (balance <= 0) {
+      continue;
+    }
     const list = map.get(r.customer_id) ?? [];
     list.push({ id: r.id, balance, customer_name: r.customer_name });
     map.set(r.customer_id, list);

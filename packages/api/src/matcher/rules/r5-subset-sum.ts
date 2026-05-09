@@ -69,7 +69,9 @@ export async function runR5SubsetSum(db: DB, cfg: MatcherConfig, fired: (rule: s
   const custNorm: Array<{ custId: string; norm: string }> = [];
   for (const [custId, invs] of openByCustomer) {
     const norm = normalizeCustomerName(invs[0]!.customer_name);
-    if (norm) custNorm.push({ custId, norm });
+    if (norm) {
+      custNorm.push({ custId, norm });
+    }
   }
 
   for (const tx of txs) {
