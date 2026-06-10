@@ -13,6 +13,7 @@ permissions: {}
 
 jobs:
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -36,6 +37,7 @@ jobs:
       - run: pnpm build
 
   test:
+    name: Run tests
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
