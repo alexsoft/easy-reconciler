@@ -1,4 +1,4 @@
-# EasyBiz Reconciler
+# Easy Reconciler
 
 A deterministic invoice ↔ bank-transaction reconciliation tool for a Luxembourg SME. Bank transactions are matched against open invoices through an 8-rule pipeline (R1–R8: exact reference → description reference → fuzzy reference → name+amount+date → subset-sum → credit-note hook → payout batch link → noise classifier). A reviewer workspace surfaces proposed matches for confirmation, partial allocation, and manual override. All matching decisions are preserved in an append-only audit log.
 
