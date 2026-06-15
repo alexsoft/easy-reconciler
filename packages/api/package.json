@@ -28,7 +28,7 @@
     "@types/fast-levenshtein": "0.0.4",
     "@types/pg": "8.11.10",
     "drizzle-kit": "0.27.0",
-    "tsx": "4.21.0",
+    "tsx": "4.22.4",
     "vitest": "4.1.5"
   }
 }
