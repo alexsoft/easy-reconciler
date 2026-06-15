@@ -60,7 +60,7 @@ async function seedInvoices() {
         .onConflictDoNothing();
     }
   }
-  console.log(`seeded ${parsed.length} invoices`);
+  console.log(`seeded ${parsed.length} invoices`); // eslint-disable-line no-console
 }
 
 async function seedTransactions() {
@@ -89,7 +89,7 @@ async function seedTransactions() {
       })
       .onConflictDoNothing({ target: transactions.dedup_hash });
   }
-  console.log(`seeded ${parsed.length} transactions`);
+  console.log(`seeded ${parsed.length} transactions`); // eslint-disable-line no-console
 }
 
 async function seedPayout() {
@@ -143,20 +143,20 @@ async function seedPayout() {
       })
       .onConflictDoNothing();
   }
-  console.log(`seeded payout batch with ${charges.length + refunds.length + chargebacks.length} items`);
+  console.log(`seeded payout batch with ${charges.length + refunds.length + chargebacks.length} items`); // eslint-disable-line no-console
 }
 
 async function main() {
   await seedInvoices();
   await seedTransactions();
   await seedPayout();
-  console.log('running matcher...');
+  console.log('running matcher...'); // eslint-disable-line no-console
   const report = await runMatcher(db);
-  console.log(`matcher done: ${JSON.stringify(report.totals)}`);
+  console.log(`matcher done: ${JSON.stringify(report.totals)}`); // eslint-disable-line no-console
   await pool.end();
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error(e); // eslint-disable-line no-console
   process.exit(1);
 });

@@ -1,6 +1,6 @@
 import { eq, and, sql } from 'drizzle-orm';
 import type { DB, DBOrTx } from '../db/client.js';
-import { allocations, transactions } from '../db/schema.js';
+import { transactions } from '../db/schema.js';
 import { recordAudit } from '../db/audit.js';
 import { getAllocationById, setAllocationConfirmed, setAllocationRejected } from '../repository/allocations.js';
 

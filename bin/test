@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Run the full test suite with a real Postgres instance.
+# Uses docker-compose.test.yml which starts db-test alongside the runner.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+exec docker compose -f "${REPO_ROOT}/docker-compose.test.yml" \
+  run --rm -w /app test-runner \
+  sh -c "pnpm install --frozen-lockfile && pnpm -r test"

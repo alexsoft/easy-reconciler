@@ -8,4 +8,4 @@ const db = drizzle(pool);
 
 await migrate(db, { migrationsFolder: './drizzle' });
 await pool.end();
-console.log('migrations applied');
+console.log('migrations applied'); // eslint-disable-line no-console
