@@ -4,8 +4,10 @@ The matcher contains no LLM. Correctness is verified deterministically via a lab
 
 ## Procedure
 
-1. `docker compose -f docker-compose.test.yml up -d`
-2. `./bin/pnpm --filter @reconciler/api test fixture-sweep`
+1. `docker compose -f docker-compose.test.yml up -d db-test`
+2. `DATABASE_URL=postgres://reconciler:reconciler@localhost:5433/reconciler_test pnpm --filter @reconciler/api test fixture-sweep`
+
+(Or run the whole suite in one shot with `./bin/test`.)
 
 ## Result
 
