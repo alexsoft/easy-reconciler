@@ -24,7 +24,7 @@
     "vite": "8.0.16",
     "tailwindcss": "4.2.4",
     "@tailwindcss/vite": "4.3.0",
-    "vitest": "4.1.5",
+    "vitest": "4.1.9",
     "@testing-library/react": "16.0.1",
     "@testing-library/jest-dom": "6.9.1",
     "jsdom": "25.0.1"
