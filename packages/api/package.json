@@ -16,7 +16,7 @@
   "dependencies": {
     "@fastify/cors": "11.2.0",
     "@reconciler/shared": "workspace:*",
-    "csv-parse": "^6.2.1",
+    "csv-parse": "^7.0.2",
     "cuid": "3.0.0",
     "drizzle-orm": "0.45.2",
     "fast-levenshtein": "3.0.0",
